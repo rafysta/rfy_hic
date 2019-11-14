@@ -46,7 +46,7 @@ EOF
 }
 
 get_version(){
-	echo "${0} version 1.0"
+	echo "sh ${0} version 1.0"
 }
 
 SHORT=hvd:n:x:r:o:m:q:
@@ -117,7 +117,6 @@ done
 DIR_LIB=$(dirname $0)
 TIME_STAMP=$(date +"%Y-%m-%d")
 
-
 [ ! -n "${NAME}" ] && echo "Please specify NAME" && exit 1
 [ ! -n "${REF}" ] && echo "Please specify ref" && exit 1
 [ ! -n "${RESTRICTION}" ] && echo "Please specify restriction" && exit 1
@@ -129,21 +128,20 @@ MAPQ_THRESHOLD=${MAPQ_THRESHOLD:-30}
 FLAG_fastqc=${FLAG_fastqc:-FALSE}
 
 
+cd ${DIR_DATA}
 
+#-----------------------------------------------
+# Load setting
+#-----------------------------------------------
 source ${DIR_LIB}/utils/load_setting.sh -x $REF -r $RESTRICTION
-
-
-# [ "$FLAG_fastqc" = "TRUE" ] && [ ! -e "${DIR_DATA}/fastqc" ] && mkdir "${DIR_DATA}/fastqc"
 
 
 #-----------------------------------------------
 # Alignment
 #-----------------------------------------------
 export BOWTIE2_INDEX DIR_DATA
-
 export FILE_fastq=${FILE_fastq1} OUT=${NAME}_1
 sh ${DIR_LIB}/utils/Alignment_with_trimming.sh
-
 export FILE_fastq=${FILE_fastq2} OUT=${NAME}_2
 sh ${DIR_LIB}/utils/Alignment_with_trimming.sh
 
@@ -151,5 +149,44 @@ sh ${DIR_LIB}/utils/Alignment_with_trimming.sh
 #-----------------------------------------------
 # fastqc
 #-----------------------------------------------
-# [ "$FLAG_fastqc" = "TRUE" ] &&  [ ! -e ${DIR_DATA}/fastqc/${NAME}_fastqc ] && sbatch -n 12 --job-name=fastqc_${NAME}_1 $(sq --node) -o "${DIR_LOG}/${TIME_STAMP}_fastqc_${NAME}_1.log" --open-mode append --wrap="cd ${DIR_DATA}; /applications/fastqc/current/fastqc -o fastqc/ --nogroup -t 12 ${NAME}_1.fastq" && sbatch -n 12 --job-name=fastqc_${NAME}_2 -o "${DIR_LOG}/${TIME_STAMP}_fastqc_${NAME}_2.log" --open-mode append --wrap="cd ${DIR_DATA}; /applications/fastqc/current/fastqc -o fastqc/ --nogroup -t 12 ${NAME}_2.fastq"
+if hash module 2>/dev/null; then
+	module load fastqc
+fi
+if [ "$FLAG_fastqc" = "TRUE" ]; then
+	[ ! -e "${DIR_DATA}/fastqc" ] && mkdir "${DIR_DATA}/fastqc"
+	fastqc -o fastqc/ --nogroup -t 12 $(echo ${FILE_fastq1} | tr ',' ' ')
+	fastqc -o fastqc/ --nogroup -t 12 $(echo ${FILE_fastq2} | tr ',' ' ')
+fi
+
+
+#-----------------------------------------------
+# assign to nearest restriction enzyme site
+#-----------------------------------------------
+# "-" direction => shift align position + read length 
+# Repeat or Unique was categorized based on the tag "XS:i"
+# Location side column is L for "+" direction, R for "-" direction
+perl ${DIR_LIB}/utils/Assign_nearest_enzymeSites.pl -a ${NAME}_1.sam -b ${NAME}_2.sam -o ${NAME}.map -e ${FILE_enzyme_def} -d ${FILE_enzyme_index} > ${NAME}_alignment.log
+
+
+#-----------------------------------------------
+# Extract unique map file and register to database
+#-----------------------------------------------
+# swap left and right to make left side always smaller than right
+# if restriction sites were missing, remove those pairs
+# entire chromosome were roughly split to 100 and split map file based 
+perl ${DIR_LIB}/utils/Split_MapFile.pl -i ${NAME}.map -l ${CHROM_LENGTH} -o ${NAME}_list.txt
+cat ${NAME}_list.txt | xargs -P12 -I@ sh -c "sort -k2,2 -k3,3n -k9,9 -k10,10n @ | awk -v OFS='\t' '{print \$0,\$2,\$3,\$9,\$10}' | uniq -f 15 | cut -f1-15 > @_sorted && mv @_sorted @"
+echo "id, chr1, position1, direction1, mapQ1, restNum1, restLoc1, uniq1, chr2, position2, direction2, mapQ2, restNum2, restLoc2, uniq2" | tr ',' '\t' > ${NAME}.map
+cat $(cat ${NAME}_list.txt) >> ${NAME}.map
+rm $(cat ${NAME}_list.txt) ${NAME}_list.txt
+Rscript --vanilla --slave ${DIR_LIB}/utils/file2database_large.R -i ${NAME}.map --db ${NAME}.db --table map
+
+
+#-----------------------------------------------
+# Summarize read filtering
+#-----------------------------------------------
+export DIR_DATA SAMPLE=${NAME}
+sh ${DIR_LIB}/utils/Count_reads.sh > ${NAME}_read_filtering.log
+
+
 
