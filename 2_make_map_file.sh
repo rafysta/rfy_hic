@@ -21,10 +21,10 @@ Description
 		sample name
 
 	--f1 [fastq file(s)]
-		fastq files
+		Comma-separated list of fastq to be aligned
 	
 	--f2 [fastq file(2)]
-		fastq files
+		Comma-separated list of fastq to be aligned
 
 	-x, --ref [ex. hg19]
 		organism name
@@ -39,7 +39,7 @@ Description
 		threshold mapQ to make map
 
 	-q, --fastqc
-		TRUE for doing fastqc analysis or FALSE for not doing (default TRUE)
+		TRUE for doing fastqc analysis or FALSE for not doing (default FALSE)
 
 EOF
 
@@ -50,7 +50,7 @@ get_version(){
 }
 
 SHORT=hvd:n:x:r:o:m:q:
-LONG=help,version,directory:,name:,ref:,restriction:,log:,mapq:,fastqc:
+LONG=help,version,directory:,name:,f1:,f2:,ref:,restriction:,log:,mapq:,fastqc:
 PARSED=`getopt --options $SHORT --longoptions $LONG --name "$0" -- "$@"`
 if [[ $? -ne 0 ]]; then
 	exit 2
@@ -73,6 +73,14 @@ while true; do
 			;;
 		-n|--name)
 			NAME="$2"
+			shift 2
+			;;
+		--f1)
+			FILE_fastq1="$2"
+			shift 2
+			;;
+		--f2)
+			FILE_fastq2="$2"
 			shift 2
 			;;
 		-x|--ref)
@@ -113,10 +121,12 @@ TIME_STAMP=$(date +"%Y-%m-%d")
 [ ! -n "${NAME}" ] && echo "Please specify NAME" && exit 1
 [ ! -n "${REF}" ] && echo "Please specify ref" && exit 1
 [ ! -n "${RESTRICTION}" ] && echo "Please specify restriction" && exit 1
-[ ! -n "${DIR_LOG}" ] && echo "Please specify log directory" && exit 1
+# [ ! -n "${DIR_LOG}" ] && echo "Please specify log directory" && exit 1
 [ ! -n "${DIR_DATA}" ] && echo "Please specify data directory" && exit 1
+[ ! -n "${FILE_fastq1}" ] && echo "Please specify fastq file1" && exit 1
+[ ! -n "${FILE_fastq2}" ] && echo "Please specify fastq file2" && exit 1
 MAPQ_THRESHOLD=${MAPQ_THRESHOLD:-30}
-FLAG_fastqc=${FLAG_fastqc:-TRUE}
+FLAG_fastqc=${FLAG_fastqc:-FALSE}
 
 
 
@@ -129,13 +139,13 @@ source ${DIR_LIB}/utils/load_setting.sh -x $REF -r $RESTRICTION
 #-----------------------------------------------
 # Alignment
 #-----------------------------------------------
-export BOWTIE_TARGET BOWTIE2_INDEXES
-export DIR_DATA NAME
+export BOWTIE2_INDEX DIR_DATA
 
+export FILE_fastq=${FILE_fastq1} OUT=${NAME}_1
+sh ${DIR_LIB}/utils/Alignment_with_trimming.sh
 
-# sh ${DIR_LIB}/utils/Alignment_with_trimming.sh
-# sbatch -n 12 --job-name=aln_${NAME} $(sq --node) -o "${DIR_LOG}/${TIME_STAMP}_Alignment_${NAME}_1.log" --export=NAME="${NAME}_1",DIR_LIB="${DIR_LIB}",DIR_DATA="${DIR_DATA}",BOWTIE_TARGET="${BOWTIE_TARGET}",BOWTIE2_INDEXES="${BOWTIE2_INDEXES}" --open-mode append ${DIR_LIB}/Alignment_with_trimming.sh
-# sbatch -n 12 --job-name=aln_${NAME} $(sq --node) -o "${DIR_LOG}/${TIME_STAMP}_Alignment_${NAME}_2.log" --export=NAME="${NAME}_2",DIR_LIB="${DIR_LIB}",DIR_DATA="${DIR_DATA}",BOWTIE_TARGET="${BOWTIE_TARGET}",BOWTIE2_INDEXES="${BOWTIE2_INDEXES}" --open-mode append ${DIR_LIB}/Alignment_with_trimming.sh
+export FILE_fastq=${FILE_fastq2} OUT=${NAME}_2
+sh ${DIR_LIB}/utils/Alignment_with_trimming.sh
 
 
 #-----------------------------------------------

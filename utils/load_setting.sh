@@ -67,8 +67,7 @@ done
 [ ! -n "${RESTRICTION}" ] && echo "Please specify restriction" && exit 1
 
 case $REF in
-	pombe)	BOWTIE_TARGET=pombe
-			BOWTIE2_INDEXES=${HOME}/Genome/data/pombe/2018
+	pombe)	BOWTIE2_INDEX=${HOME}/Genome/data/pombe/2018/Bowtie2/2018
 			CHROM_LENGTH=12571820
 			FILE_CHROME_LENGTH=${HOME}/Genome/data/pombe/2018/LENGTH.txt
 			case $RESTRICTION in 
@@ -82,8 +81,7 @@ case $REF in
 					exit ;;
 			esac
 			;;
-	hg19)	BOWTIE_TARGET=hg19
-			BOWTIE2_INDEXES=${HOME}/Genome/data/human/hg19/Bowtie2
+	hg19)	BOWTIE2_INDEX=${HOME}/Genome/data/human/hg19/Bowtie2/hg19
 			CHROM_LENGTH=3095677412
 			FILE_CHROME_LENGTH=${HOME}/Genome/data/human/hg19/LENGTH.txt
 			case $RESTRICTION in 
@@ -95,8 +93,7 @@ case $REF in
 					exit ;;
 			esac
 			;;
-	human_EBV)	BOWTIE_TARGET=hg19_EBV
-			BOWTIE2_INDEXES=${HOME}/Genome/data/human/hg19_EBV
+	human_EBV)	BOWTIE2_INDEX=${HOME}/Genome/data/human/hg19_EBV/Bowtie2/hg19_EBV
 			CHROM_LENGTH=3157782322
 			FILE_CHROME_LENGTH=${HOME}/Genome/data/human/hg19_EBV/LENGTH.txt
 			case $RESTRICTION in 
@@ -108,8 +105,7 @@ case $REF in
 					exit ;;
 			esac
 			;;
-	mouse)	BOWTIE_TARGET=mm10
-			BOWTIE2_INDEXES=${HOME}/Genome/data/mouse/mm10
+	mouse)	BOWTIE2_INDEX=${HOME}/Genome/data/mouse/mm10/Bowtie2/mm10
 			CHROM_LENGTH=2725537669
 			FILE_CHROME_LENGTH=${HOME}/Genome/data/mouse/mm10/LENGTH.txt
 			case $RESTRICTION in 
