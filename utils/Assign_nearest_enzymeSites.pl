@@ -226,11 +226,6 @@ sub FindHindIIIinfo{
 		}
 
 		my ($chrTmp, $hinID) = split /:/, $MIN_id;
-		# if($direction eq '+'){
-		# 	$hinID .= 'L';
-		# }else{
-		# 	$hinID .= 'R';
-		# }
 
 		return ($hinID, $Enzymes{$MIN_id});
 	}else{
