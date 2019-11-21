@@ -7,13 +7,15 @@ fi
 
 DIR_LIB=$(dirname $0)
 PROGRAM_CIGAR=${DIR_LIB}/CigarFilter.pl
+VERBOSE=${VERBOSE:-FALSE}
+
 cd ${DIR_DATA}
 
 FILE_log=${OUT}_bowtie2.log
 FILE_tmp=${OUT}_bowtie2_tmp.log
 echo "Length Total % NoAlign % Unique % Multiple %" | tr ' ' '\t' > $FILE_log
 function getLog(){
-	# cat $FILE_tmp
+	[ $VERBOSE = "TRUE" ] && cat $FILE_tmp
 	cat $FILE_tmp | tr -d '()' | awk -v OFS='\t' 'NR>1&&NR<6{print $1,$2}' | xargs | tr ' ' '\t' >> $FILE_log && rm $FILE_tmp
 }
 
@@ -22,17 +24,20 @@ let READ_LENGTH=$(head -n 2 ${FILE_first} | tail -n 1 | wc -m)
 let MAX2_TRIM=$READ_LENGTH-25
 let MAX_TRIM=$READ_LENGTH-20
 
+[ $VERBOSE = "TRUE" ] && echo "Align entire ${READ_LENGTH}bp read"
 echo -n "${READ_LENGTH}bp	" >> $FILE_log
 bowtie2 -x ${BOWTIE2_INDEX} -U ${FILE_fastq} -q -p 12 --no-unal --un ${OUT}_unaligned.fastq > ${OUT}.sam 2> $FILE_tmp && getLog
 mv ${OUT}_unaligned.fastq ${OUT}_tmp.fastq
 
 for LEN in $(seq 5 5 $MAX2_TRIM)
 do
+	[ $VERBOSE = "TRUE" ] && echo && echo "Trim ${LEN}bp and align"
 	echo -n "Trim ${LEN}bp	" >> $FILE_log
 	bowtie2 -x ${BOWTIE2_INDEX} -U ${OUT}_tmp.fastq -q -3 $LEN -p 12 --no-hd --no-unal --un ${OUT}_unaligned.fastq >> ${OUT}.sam 2> $FILE_tmp && getLog
 	mv ${OUT}_unaligned.fastq ${OUT}_tmp.fastq
 done
 
+[ $VERBOSE = "TRUE" ] && echo && echo "Trim ${MAX_TRIM}bp and align"
 echo -n "Trim ${MAX_TRIM}bp	" >> $FILE_log
 bowtie2 -x ${BOWTIE2_INDEX} -U ${OUT}_tmp.fastq -q -3 ${MAX_TRIM} -p 12 --no-hd  >> ${OUT}.sam 2> $FILE_tmp && getLog
 rm ${OUT}_tmp.fastq
@@ -45,6 +50,7 @@ do
 	TRIM_OPTION=$(head -n $i ${OUT}_fastqList.txt | tail -n 1 | cut -f1)
 	FASTQ_REANALYZE=$(head -n $i ${OUT}_fastqList.txt | tail -n 1 | cut -f2)
 	# echo "Command : bowtie2 -x ${BOWTIE2_INDEX} -U ${FASTQ_REANALYZE} -q ${TRIM_OPTION} -p 12 --no-hd"
+	[ $VERBOSE = "TRUE" ] && echo && echo "Bowtie2 option: ${TRIM_OPTION} and align"
 	echo -n "Option:${TRIM_OPTION}	" >> $FILE_log
 	bowtie2 -x ${BOWTIE2_INDEX} -U ${FASTQ_REANALYZE} -q ${TRIM_OPTION} -p 12 --no-hd >> ${OUT}.sam 2> $FILE_tmp && getLog
 	rm ${FASTQ_REANALYZE}

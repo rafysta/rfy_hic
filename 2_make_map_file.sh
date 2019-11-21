@@ -35,6 +35,8 @@ Description
 	-q, --fastqc
 		TRUE for doing fastqc analysis or FALSE for not doing (default FALSE)
 
+	--verbose
+		Output bowtie2 trimming alingment log
 EOF
 
 }
@@ -44,7 +46,7 @@ get_version(){
 }
 
 SHORT=hvd:n:x:r:q:
-LONG=help,version,directory:,name:,f1:,f2:,ref:,restriction:,fastqc:
+LONG=help,version,directory:,name:,f1:,f2:,ref:,restriction:,fastqc:,verbose
 PARSED=`getopt --options $SHORT --longoptions $LONG --name "$0" -- "$@"`
 if [[ $? -ne 0 ]]; then
 	exit 2
@@ -89,6 +91,10 @@ while true; do
 			FLAG_fastqc="$2"
 			shift 2
 			;;
+		--verbose)
+			VERBOSE=TRUE
+			shift
+			;;
 		--)
 			shift
 			break
@@ -110,7 +116,7 @@ TIME_STAMP=$(date +"%Y-%m-%d")
 [ ! -n "${FILE_fastq1}" ] && echo "Please specify fastq file1" && exit 1
 [ ! -n "${FILE_fastq2}" ] && echo "Please specify fastq file2" && exit 1
 FLAG_fastqc=${FLAG_fastqc:-FALSE}
-
+VERBOSE=${VERBOSE:-FALSE}
 
 cd ${DIR_DATA}
 
@@ -123,7 +129,7 @@ source ${DIR_LIB}/utils/load_setting.sh -x $REF -r $RESTRICTION
 #-----------------------------------------------
 # Alignment
 #-----------------------------------------------
-export BOWTIE2_INDEX DIR_DATA
+export BOWTIE2_INDEX DIR_DATA VERBOSE
 export FILE_fastq=${FILE_fastq1} OUT=${NAME}_1
 sh ${DIR_LIB}/utils/Alignment_with_trimming.sh
 [ $? -ne 0 ] && exit 1
