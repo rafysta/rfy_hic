@@ -105,7 +105,7 @@ case $REF in
 					exit ;;
 			esac
 			;;
-	mouse)	BOWTIE2_INDEX=${HOME}/Genome/data/mouse/mm10/Bowtie2/mm10
+	mm10)	BOWTIE2_INDEX=${HOME}/Genome/data/mouse/mm10/Bowtie2/mm10
 			CHROM_LENGTH=2725537669
 			FILE_CHROME_LENGTH=${HOME}/Genome/data/mouse/mm10/LENGTH.txt
 			case $RESTRICTION in 
