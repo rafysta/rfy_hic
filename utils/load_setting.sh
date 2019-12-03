@@ -77,6 +77,7 @@ case $REF in
 							FILE_enzyme_def=${HOME}/Genome/data/pombe/2018/MboI-Hinf1_sites.txt ;;
 				MboI-Hinf1-MluCl)	FILE_enzyme_index=${HOME}/Genome/data/pombe/2018/Sectioning_MboI-Hinf1-MluCl.txt
 									FILE_enzyme_def=${HOME}/Genome/data/pombe/2018/MboI-Hinf1-MluCl_sites.txt ;;
+				NA) ;;
 				*)	echo "$RESTRICTION is not registered for $ORGANISM"
 					exit ;;
 			esac
@@ -89,6 +90,7 @@ case $REF in
 							FILE_enzyme_def=${HOME}/Genome/data/human/hg19/HindIII_sites.txt ;;
 				MboI)	FILE_enzyme_index=${HOME}/Genome/data/human/hg19/Sectioning_MboI.txt
 						FILE_enzyme_def=${HOME}/Genome/data/human/hg19/MboI_sites.txt ;;
+				NA) ;;
 				*)	echo "$RESTRICTION is not registered for $ORGANISM"
 					exit ;;
 			esac
@@ -111,10 +113,11 @@ case $REF in
 			case $RESTRICTION in 
 				MboI)	FILE_enzyme_index=${HOME}/Genome/data/mouse/mm10/Sectioning_MboI.txt
 						FILE_enzyme_def=${HOME}/Genome/data/mouse/mm10/MboI_sites.txt ;;
+				NA) ;;
 				*)	echo "$RESTRICTION is not registered for $ORGANISM"
 					exit ;;
 			esac
 			;;
-	*)	echo "Please specify correct organism"
+	*)	echo "Please specify correct reference name"
 		eixt 1 ;;
 esac
