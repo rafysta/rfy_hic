@@ -24,6 +24,15 @@ Description
 
 	-m, --mapq [mapq threshold (default:30)]
 		threshold mapQ to make map
+	
+	-x, --ref [ex. hg19]
+		organism name
+
+	-r, --restriction [HindIII|MboI|MboI-HinfI]
+		name for restriction
+
+	--remove
+		remove all output files
 EOF
 
 }
@@ -33,7 +42,7 @@ get_version(){
 }
 
 SHORT=hvd:i:n:m:x:r:
-LONG=help,version,directory:,in:,name:,mapq:,ref:,restriction:
+LONG=help,version,directory:,in:,name:,mapq:,ref:,restriction:,remove
 PARSED=`getopt --options $SHORT --longoptions $LONG --name "$0" -- "$@"`
 if [[ $? -ne 0 ]]; then
 	exit 2
@@ -74,6 +83,10 @@ while true; do
 			RESTRICTION="$2"
 			shift 2
 			;;
+		--remove)
+			FLAG_remove="TRUE"
+			shift
+			;;
 		--)
 			shift
 			break
@@ -95,10 +108,19 @@ INPUT_FILES=$@
 [ ! -n "${REF}" ] && echo "Please specify ref" && exit 1
 [ ! -n "${RESTRICTION}" ] && echo "Please specify restriction" && exit 1
 MAPQ_THRESHOLD=${MAPQ_THRESHOLD:-30}
-
-
+FLAG_remove=${FLAG_remove:-FALSE}
 
 cd ${DIR_DATA}
+
+
+#-----------------------------------------------
+# Remove all output file
+#-----------------------------------------------
+if [ $FLAG_remove = "TRUE" ]; then
+	rm ${NAME}_fragment_pair.txt.gz ${NAME}_distance.txt ${NAME}_DNA_amount.bed ${NAME}_bad_fragment.txt ${NAME}_fragment.png ${NAME}_fragment.db ${NAME}_fragment.txt ${NAME}_InterChromosome.matrix
+	exit
+fi
+
 
 #-----------------------------------------------
 # Load setting
@@ -122,12 +144,6 @@ gzip ${NAME}_fragment_pair.txt
 # Distance curve
 #-----------------------------------------------
 perl ${DIR_LIB}/utils/Create_distanceNormalize_data.pl -i ${NAME}_fragment.db -l ${FILE_CHROME_LENGTH} -o ${NAME}_distance.txt
-
-
-#-----------------------------------------------
-# DNA amount estimation
-#-----------------------------------------------
-perl ${DIR_LIB}/utils/Count_DNA_amount.pl -i ${NAME}.db -o ${NAME}_DNA_amount.bed
 
 
 #-----------------------------------------------
