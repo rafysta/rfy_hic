@@ -48,7 +48,8 @@ my %Chromosomes;
 		# 番号0の断片を作っておく
 		if($number == 1){
 			my $id0 = $chr . ':0';
-			$Enzymes{$id0} = "1\t$pos";
+			my $middle0 = $pos + $pos/2;
+			$Enzymes{$id0} = "1\t$pos\t$middle0";
 		}
 
 		my $id = $chr . ':' . $number;
@@ -74,8 +75,8 @@ foreach my $file (@FILE_maps){
 		s/\r?\n//;
 		my ($id, $chr1, $position1, $direction1, $mapQ1, $restNum1, $restLoc1, $uniq1, $chr2, $position2, $direction2, $mapQ2, $restNum2, $restLoc2, $uniq2) = split /\t/;
 
-		if($uniq1 eq 'U' or $uniq2 eq 'U'){next;}
-		if($restLoc1 eq 'NA' or $restLoc2 eq 'NA'){next;}
+		if($uniq1 eq 'R' or $uniq2 eq 'R'){next;}
+		if($restNum1 eq 'NA' or $restNum2 eq 'NA'){next;}
 		if($mapQ1 < $MAPQ_threshold or $mapQ2 < $MAPQ_threshold){next;}
 
 		if($direction1 eq '+'){
@@ -89,6 +90,15 @@ foreach my $file (@FILE_maps){
 		my $id2 = $chr2 . ':' . $restNum2;
 		my ($start1, $end1, $middle1) = split /\t/, $Enzymes{$id1};
 		my ($start2, $end2, $middle2) = split /\t/, $Enzymes{$id2};
+
+		unless(defined $middle1){
+			print "middle1 was not defined in $_\n";
+			exit 1;
+		}
+		unless(defined $middle2){
+			print "middle2 was not defined in $_\n";
+			exit 1;
+		}
 
 		# Remove self ligation and potential un-digested pairs (less than 10kb and different directions)
 		if($chr1 eq $chr2 and abs($middle1 - $middle2) < 10000 and $direction1 ne $direction2){
