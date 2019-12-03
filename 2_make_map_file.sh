@@ -189,3 +189,8 @@ sh ${DIR_LIB}/utils/Count_reads.sh > ${NAME}_read_filtering.log
 
 
 
+#-----------------------------------------------
+# DNA amount estimation
+#-----------------------------------------------
+perl ${DIR_LIB}/utils/Count_DNA_amount.pl -i ${NAME}.db -o ${NAME}_DNA_amount.bed
+
