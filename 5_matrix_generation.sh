@@ -94,10 +94,6 @@ while true; do
 			RESOLUTION=${RESOLUTION/bp/}
 			shift 2
 			;;
-		-o|--log)
-			FILE_LOG="$2"
-			shift 2
-			;;
 		-t|--intra)
 			# if only intra chromosome TRUE, otherwise FALSE (default TRUE)
 			FLAG_INTRA="$2"
@@ -154,10 +150,8 @@ source ${DIR_LIB}/utils/load_setting.sh -x $REF -r NA
 # Load chromosome length
 #-----------------------------------------------
 CHR_TABLE=$(Rscript --vanilla --slave ${DIR_LIB}/utils/Chromosome_length.R --in $FILE_CHROME_LENGTH --include $CHR_include --exclude $CHR_exclude)
-CHRs=$(echo $CHR_TABLE | xargs -n1 | awk 'NR==1' | tr ',' ' ')
-LENGTH=$(echo $CHR_TABLE | xargs -n1 | awk 'NR==2' | tr ',' ' ')
-
-
+CHRs=($(echo $CHR_TABLE | xargs -n1 | awk 'NR==1' | tr ',' ' '))
+LENGTH=($(echo $CHR_TABLE | xargs -n1 | awk 'NR==2' | tr ',' ' '))
 
 #==============================================================
 # matrix用のフォルダの作成
