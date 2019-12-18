@@ -8,11 +8,13 @@ fi
 DIR_LIB=$(dirname $0)
 PROGRAM_CIGAR=${DIR_LIB}/CigarFilter.pl
 VERBOSE=${VERBOSE:-FALSE}
+DIR_tmp=$(mktemp -d /tmp/tmp_${OUT}.XXXXX)
+FILE_log=${DIR_DATA}/${OUT}_bowtie2.log
+FILE_tmp=${DIR_tmp}/${OUT}_bowtie2_tmp.log
+
 
 cd ${DIR_DATA}
 
-FILE_log=${OUT}_bowtie2.log
-FILE_tmp=${OUT}_bowtie2_tmp.log
 echo "Length Total % NoAlign % Unique % Multiple %" | tr ' ' '\t' > $FILE_log
 function getLog(){
 	[ $VERBOSE = "TRUE" ] && cat $FILE_tmp
@@ -26,8 +28,11 @@ let MAX_TRIM=$READ_LENGTH-20
 
 [ $VERBOSE = "TRUE" ] && echo "Align entire ${READ_LENGTH}bp read"
 echo -n "${READ_LENGTH}bp	" >> $FILE_log
-bowtie2 -x ${BOWTIE2_INDEX} -U ${FILE_fastq} -q -p 12 --no-unal --un ${OUT}_unaligned.fastq > ${OUT}.sam 2> $FILE_tmp && getLog
-mv ${OUT}_unaligned.fastq ${OUT}_tmp.fastq
+bowtie2 -x ${BOWTIE2_INDEX} -U ${FILE_fastq} -q -p 12 --no-unal --un ${DIR_tmp}/${OUT}_unaligned.fastq > ${DIR_tmp}/${OUT}.sam 2> $FILE_tmp && getLog
+mv ${DIR_tmp}/${OUT}_unaligned.fastq ${DIR_tmp}/${OUT}_tmp.fastq
+
+### Change to temp directory
+cd ${DIR_tmp}
 
 for LEN in $(seq 5 5 $MAX2_TRIM)
 do
@@ -70,4 +75,9 @@ fi
 samtools sort -n ${OUT}.bam -o ${OUT}_sort.bam -T tmpBamSort_${OUT}
 samtools view ${OUT}_sort.bam > ${OUT}.sam 
 rm ${OUT}_sort.bam ${OUT}.bam
+
+### Transfer to data directory
+mv ${OUT}.sam ${DIR_DATA}/${OUT}.sam
+
+rm -r ${DIR_tmp}
 exit 0
