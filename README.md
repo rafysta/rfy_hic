@@ -1,2 +1,2 @@
 # rfy_hic
-hic processing pipeline
+Custom HiC processing pipeline for other people
