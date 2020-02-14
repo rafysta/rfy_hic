@@ -201,6 +201,7 @@ if [ $FLAG_RAW = "TRUE" ]; then
 			Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_matrix_to_object.R -i ${CHR}.matrix
 		done
 	else
+		cd ${DIR_DATA}/${NAME}/${RESOLUTION_string}/Raw
 		Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_matrix_to_object.R -i ALL.matrix
 	fi
 fi
