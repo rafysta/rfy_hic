@@ -67,7 +67,7 @@ done
 [ ! -n "${RESTRICTION}" ] && echo "Please specify restriction" && exit 1
 
 case $REF in
-	pombe)	BOWTIE2_INDEX=${HOME}/Genome/data/pombe/2018/Bowtie2/2018
+	pombe)	BOWTIE2_INDEX=${HOME}/Genome/data/pombe/2018/pombe
 			CHROM_LENGTH=12571820
 			FILE_CHROME_LENGTH=${HOME}/Genome/data/pombe/2018/LENGTH.txt
 			case $RESTRICTION in 
@@ -95,7 +95,7 @@ case $REF in
 					exit ;;
 			esac
 			;;
-	human_EBV)	BOWTIE2_INDEX=${HOME}/Genome/data/human/hg19_EBV/Bowtie2/hg19_EBV
+	hg19_EBV)	BOWTIE2_INDEX=${HOME}/Genome/data/human/hg19_EBV/hg19_EBV
 			CHROM_LENGTH=3157782322
 			FILE_CHROME_LENGTH=${HOME}/Genome/data/human/hg19_EBV/LENGTH.txt
 			case $RESTRICTION in 
