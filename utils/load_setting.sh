@@ -103,6 +103,7 @@ case $REF in
 						FILE_enzyme_def=${HOME}/Genome/data/human/hg19_EBV/MboI_sites.txt;;
 				MboI-HinfI)	FILE_enzyme_index=${HOME}/Genome/data/human/hg19_EBV/Sectioning_MboI-HinfI.txt
 						FILE_enzyme_def=${HOME}/Genome/data/human/hg19_EBV/MboI-HinfI_sites.txt ;;
+				NA) ;;
 				*)	echo "$RESTRICTION is not registered for $ORGANISM"
 					exit ;;
 			esac
