@@ -152,6 +152,8 @@ source ${DIR_LIB}/utils/load_setting.sh -x $REF -r NA
 CHR_TABLE=$(Rscript --vanilla --slave ${DIR_LIB}/utils/Chromosome_length.R --in $FILE_CHROME_LENGTH --include $CHR_include --exclude $CHR_exclude)
 CHRs=($(echo $CHR_TABLE | xargs -n1 | awk 'NR==1' | tr ',' ' '))
 LENGTH=($(echo $CHR_TABLE | xargs -n1 | awk 'NR==2' | tr ',' ' '))
+CHRs_list=$(echo ${CHRs[@]} | tr ' ' ',')
+
 
 #==============================================================
 # matrix用のフォルダの作成
@@ -187,9 +189,9 @@ if [ $FLAG_RAW = "TRUE" ]; then
 		PRO_RAW_matrix=${DIR_LIB}/utils/Make_association_from_fragmentdb_allChromosome.pl
 	fi
 	if [ "$FLAG_blacklist" = "TRUE" ] && [ -e ${DIR_DATA}/${NAME}_bad_fragment.txt ]; then
-		perl $PRO_RAW_matrix -i ${NAME}_fragment.db -o ${NAME}/${RESOLUTION_string}/Raw/  -r ${RESOLUTION} -b ${NAME}_bad_fragment.txt
+		perl $PRO_RAW_matrix -i ${NAME}_fragment.db -o ${NAME}/${RESOLUTION_string}/Raw/  -r ${RESOLUTION} -b ${NAME}_bad_fragment.txt -c $CHRs_list
 	else
-		perl $PRO_RAW_matrix -i ${NAME}_fragment.db -o ${NAME}/${RESOLUTION_string}/Raw/  -r ${RESOLUTION}
+		perl $PRO_RAW_matrix -i ${NAME}_fragment.db -o ${NAME}/${RESOLUTION_string}/Raw/  -r ${RESOLUTION} -c $CHRs_list
 	fi
 
 	if [ $FLAG_INTRA = "TRUE" ]; then

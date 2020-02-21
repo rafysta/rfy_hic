@@ -12,17 +12,18 @@ $| = 0;
 
 use DBI;
 
-if((@ARGV != 6 and @ARGV != 8 and @ARGV != 10) or $ARGV[0] eq '--help'){
-	die "Usage : $0 -i [detabase files] -o [output prefix] -r [resolution] -d [distance normalize file] -b [black list of fragment]\n";
+if((@ARGV != 8 and @ARGV != 10 and @ARGV != 12) or $ARGV[0] eq '--help'){
+	die "Usage : $0 -i [detabase files] -o [output prefix] -r [resolution] -d [distance normalize file] -b [black list of fragment] -c [chromosome list]\n";
 }
 
 my %opt;
-getopts("i:o:r:d:b:", \%opt);
+getopts("i:o:r:d:b:c:", \%opt);
 my $FILE_database = $opt{i};
 my $FILE_out_prefix = $opt{o};
 my $Resolution = $opt{r};
 my $FILE_distance = $opt{d};
 my $FILE_black = $opt{b};
+my @chromosomes = split /,/, $opt{c};
 
 
 # 全データを入れる変数
@@ -60,17 +61,6 @@ if(defined $FILE_black){
 
 
 my $dbh = DBI->connect("dbi:SQLite:dbname=$FILE_database");
-
-#---------------------------------------
-# chromosomeのリストを取得する
-#---------------------------------------
-my @chromosomes;
-my $sth_getChr = $dbh->prepare("select distinct(chr1) from fragment");
-$sth_getChr->execute();
-while(my ($c) = $sth_getChr->fetchrow_array()){
-	push @chromosomes, $c;
-}
-$sth_getChr->finish();
 
 
 #---------------------------------------
