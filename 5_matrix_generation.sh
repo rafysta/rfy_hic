@@ -42,6 +42,12 @@ Description
 	
 	--use_blacklist [TRUE/FALSE]
 		use fragment blacklist to eliminate strange ones. Default : TRUE
+
+	--dataframe
+		instead of matrices, output as data frame format
+
+	--max_distance [maximum distance]
+		if output as dataframe format, what is the maximum distance
 EOF
 
 }
@@ -51,7 +57,7 @@ get_version(){
 }
 
 SHORT=hvd:n:x:r:t:e:c:
-LONG=help,version,directory:,name:,ref:,include:,exclude:,resolution:,intra:,normalization:,raw:,use_blacklist:
+LONG=help,version,directory:,name:,ref:,include:,exclude:,resolution:,intra:,normalization:,raw:,use_blacklist:,dataframe,max_distance:
 PARSED=`getopt --options $SHORT --longoptions $LONG --name "$0" -- "$@"`
 if [[ $? -ne 0 ]]; then
 	exit 2
@@ -112,6 +118,14 @@ while true; do
 			FLAG_blacklist="$2"
 			shift 2
 			;;
+		--dataframe)
+			FLAG_dataframe="TRUE"
+			shift 1
+			;;
+		--max_distance)
+			THRESHOLD_MAX_DISTANCE="$2"
+			shift 2
+			;;
 		--)
 			shift
 			break
@@ -134,6 +148,9 @@ FLAG_blacklist=${FLAG_blacklist:-TRUE}
 CHR_include=${CHR_include:-NA}
 CHR_exclude=${CHR_exclude:-NA}
 [ "$FLAG_blacklist" = "TRUE" ] && [ ! -e ${DIR_DATA}/${NAME}_bad_fragment.txt ] && echo "bad fragment list not exists" && exit 1
+FLAG_dataframe=${FLAG_dataframe:-FALSE}
+[ "$FLAG_dataframe" = "TRUE" ] && [ ! -n "$THRESHOLD_MAX_DISTANCE" ] && echo "If output as dataframe format, please specify maximum distance" && exit 1
+
 
 
 TIME_STAMP=$(date +"%Y-%m-%d")
@@ -156,7 +173,7 @@ CHRs_list=$(echo ${CHRs[@]} | tr ' ' ',')
 
 
 #==============================================================
-# matrix用のフォルダの作成
+# フォルダの作成
 #==============================================================
 if [ ! -e ${DIR_DATA}/${NAME} ]; then
 	mkdir ${DIR_DATA}/${NAME}
@@ -167,6 +184,33 @@ fi
 if [ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/Raw ]; then
 	mkdir ${DIR_DATA}/${NAME}/${RESOLUTION_string}/Raw
 fi
+
+
+#==============================================================
+# dataframe formatの場合
+#==============================================================
+if [ $FLAG_dataframe = "TRUE" ]; then
+	cd ${DIR_DATA};
+	if [ "$FLAG_blacklist" = "TRUE" ] && [ -e ${DIR_DATA}/${NAME}_bad_fragment.txt ]; then
+		perl ${DIR_LIB}/utils/Make_association_from_fragmentdb_onlyIntraChr_lessThanDistance.pl -i ${NAME}_fragment.db -o ${NAME}/${RESOLUTION_string}/Raw/  -r ${RESOLUTION} -b ${NAME}_bad_fragment.txt -c $CHRs_list -m $THRESHOLD_MAX_DISTANCE -d ${NAME}_distance.txt
+	else
+		perl ${DIR_LIB}/utils/Make_association_from_fragmentdb_onlyIntraChr_lessThanDistance.pl -i ${NAME}_fragment.db -o ${NAME}/${RESOLUTION_string}/Raw/  -r ${RESOLUTION} -c $CHRs_list -m $THRESHOLD_MAX_DISTANCE  -d ${NAME}_distance.txt
+	fi
+
+	cd ${DIR_DATA}/${NAME}/${RESOLUTION_string}/Raw
+	for i in $(seq 1 ${#CHRs[@]})
+	do
+		let index=i-1
+		CHR=${CHRs[index]}
+		Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_dataframe_to_object.R -i ${CHR}_dataframe.txt -o ${CHR}_dataframe.rds
+	done
+	exit
+fi
+
+
+#==============================================================
+# matrix用のフォルダの作成
+#==============================================================
 if [ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/ICE ]; then
 	mkdir ${DIR_DATA}/${NAME}/${RESOLUTION_string}/ICE
 fi
