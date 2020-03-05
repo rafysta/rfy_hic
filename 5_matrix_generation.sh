@@ -96,7 +96,8 @@ while true; do
 			;;
 		-r|--resolution)
 			RESOLUTION_string="$2"
-			RESOLUTION=${RESOLUTION_string/kb/000}
+			RESOLUTION=${RESOLUTION_string/Mb/000000}
+			RESOLUTION=${RESOLUTION/kb/000}
 			RESOLUTION=${RESOLUTION/bp/}
 			shift 2
 			;;
@@ -151,11 +152,7 @@ CHR_exclude=${CHR_exclude:-NA}
 FLAG_dataframe=${FLAG_dataframe:-FALSE}
 [ "$FLAG_dataframe" = "TRUE" ] && [ ! -n "$THRESHOLD_MAX_DISTANCE" ] && echo "If output as dataframe format, please specify maximum distance" && exit 1
 
-
-
-TIME_STAMP=$(date +"%Y-%m-%d")
 DIR_LIB=$(dirname $0)
-
 
 #-----------------------------------------------
 # Load setting
@@ -172,17 +169,11 @@ LENGTH=($(echo $CHR_TABLE | xargs -n1 | awk 'NR==2' | tr ',' ' '))
 CHRs_list=$(echo ${CHRs[@]} | tr ' ' ',')
 
 
-#==============================================================
-# フォルダの作成
-#==============================================================
 if [ ! -e ${DIR_DATA}/${NAME} ]; then
 	mkdir ${DIR_DATA}/${NAME}
 fi
 if [ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string} ]; then
 	mkdir ${DIR_DATA}/${NAME}/${RESOLUTION_string}
-fi
-if [ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/Raw ]; then
-	mkdir ${DIR_DATA}/${NAME}/${RESOLUTION_string}/Raw
 fi
 
 
@@ -190,6 +181,9 @@ fi
 # dataframe formatの場合
 #==============================================================
 if [ $FLAG_dataframe = "TRUE" ]; then
+	if [ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/Raw ]; then
+		mkdir ${DIR_DATA}/${NAME}/${RESOLUTION_string}/Raw
+	fi
 	cd ${DIR_DATA};
 	if [ "$FLAG_blacklist" = "TRUE" ] && [ -e ${DIR_DATA}/${NAME}_bad_fragment.txt ]; then
 		perl ${DIR_LIB}/utils/Make_association_from_fragmentdb_onlyIntraChr_lessThanDistance.pl -i ${NAME}_fragment.db -o ${NAME}/${RESOLUTION_string}/Raw/  -r ${RESOLUTION} -b ${NAME}_bad_fragment.txt -c $CHRs_list -m $THRESHOLD_MAX_DISTANCE -d ${NAME}_distance.txt
@@ -209,23 +203,12 @@ fi
 
 
 #==============================================================
-# matrix用のフォルダの作成
-#==============================================================
-if [ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/ICE ]; then
-	mkdir ${DIR_DATA}/${NAME}/${RESOLUTION_string}/ICE
-fi
-if [ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/ICE2 ]; then
-	mkdir ${DIR_DATA}/${NAME}/${RESOLUTION_string}/ICE2
-fi
-if [ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/InterBin ]; then
-	mkdir ${DIR_DATA}/${NAME}/${RESOLUTION_string}/InterBin
-fi
-
-
-#==============================================================
 # Raw matrixの作成
 #==============================================================
 if [ $FLAG_RAW = "TRUE" ]; then
+	if [ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/Raw ]; then
+		mkdir ${DIR_DATA}/${NAME}/${RESOLUTION_string}/Raw
+	fi
 	cd ${DIR_DATA};
 	if [ $FLAG_INTRA = "TRUE" ]; then
 		PRO_RAW_matrix=${DIR_LIB}/utils/Make_association_from_fragmentdb_onlyIntraChr.pl
@@ -233,6 +216,7 @@ if [ $FLAG_RAW = "TRUE" ]; then
 		PRO_RAW_matrix=${DIR_LIB}/utils/Make_association_from_fragmentdb_allChromosome.pl
 	fi
 	if [ "$FLAG_blacklist" = "TRUE" ] && [ -e ${DIR_DATA}/${NAME}_bad_fragment.txt ]; then
+		echo "make matrix"
 		perl $PRO_RAW_matrix -i ${NAME}_fragment.db -o ${NAME}/${RESOLUTION_string}/Raw/  -r ${RESOLUTION} -b ${NAME}_bad_fragment.txt -c $CHRs_list
 	else
 		perl $PRO_RAW_matrix -i ${NAME}_fragment.db -o ${NAME}/${RESOLUTION_string}/Raw/  -r ${RESOLUTION} -c $CHRs_list
@@ -256,14 +240,24 @@ fi
 #==============================================================
 # binごとのinter-chromosomeのデータを計算
 #==============================================================
-if [ $FLAG_INTRA = "TRUE" ]; then
+if [ $FLAG_INTRA = "TRUE" ] && [ $FLAG_NORM = "TRUE" ]; then
+	if [ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/InterBin ]; then
+		mkdir ${DIR_DATA}/${NAME}/${RESOLUTION_string}/InterBin
+	fi
 	[ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/InterBin/${CHRs[0]}.txt ] && cd ${DIR_DATA} && perl ${DIR_LIB}/utils/Make_association_from_fragmentdb_interChromosome_perBin.pl -i ${NAME}_fragment.db -o ${NAME}/${RESOLUTION_string}/InterBin/  -r ${RESOLUTION} -b ${NAME}_bad_fragment.txt
 fi
+
 
 #==============================================================
 # ICE normalization
 #==============================================================
 if [ $FLAG_NORM = "TRUE" ]; then
+	if [ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/ICE ]; then
+		mkdir ${DIR_DATA}/${NAME}/${RESOLUTION_string}/ICE
+	fi
+	if [ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/ICE2 ]; then
+		mkdir ${DIR_DATA}/${NAME}/${RESOLUTION_string}/ICE2
+	fi
 	cd ${DIR_DATA}/${NAME}/${RESOLUTION_string}
 	if [ $FLAG_INTRA = "TRUE" ]; then
 		for i in $(seq 1 ${#CHRs[@]})
