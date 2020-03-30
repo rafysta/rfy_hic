@@ -13,26 +13,26 @@ FILE_log=${DIR_DATA}/${OUT}_bowtie2.log
 FILE_tmp=${DIR_tmp}/${OUT}_bowtie2_tmp.log
 
 
-cd ${DIR_DATA}
-
 echo "Length Total % NoAlign % Unique % Multiple %" | tr ' ' '\t' > $FILE_log
 function getLog(){
 	[ $VERBOSE = "TRUE" ] && cat $FILE_tmp
 	cat $FILE_tmp | tr -d '()' | awk -v OFS='\t' 'NR>1&&NR<6{print $1,$2}' | xargs | tr ' ' '\t' >> $FILE_log && rm $FILE_tmp
 }
 
-FILE_first=$(echo ${FILE_fastq} | cut -f1 -d',')
-let READ_LENGTH=$(head -n 2 ${FILE_first} | tail -n 1 | wc -m)
+less $(echo ${FILE_fastq} | tr ',' ' ') > ${DIR_tmp}/input.fastq
+
+### Change to temp directory
+cd ${DIR_tmp}
+
+let READ_LENGTH=$(head -n 2 input.fastq | tail -n 1 | wc -m)
 let MAX2_TRIM=$READ_LENGTH-25
 let MAX_TRIM=$READ_LENGTH-20
 
 [ $VERBOSE = "TRUE" ] && echo "Align entire ${READ_LENGTH}bp read"
 echo -n "${READ_LENGTH}bp	" >> $FILE_log
-bowtie2 -x ${BOWTIE2_INDEX} -U ${FILE_fastq} -q -p 12 --no-unal --un ${DIR_tmp}/${OUT}_unaligned.fastq > ${DIR_tmp}/${OUT}.sam 2> $FILE_tmp && getLog
-mv ${DIR_tmp}/${OUT}_unaligned.fastq ${DIR_tmp}/${OUT}_tmp.fastq
+bowtie2 -x ${BOWTIE2_INDEX} -U input.fastq -q -p 12 --no-unal --un ${OUT}_unaligned.fastq > ${OUT}.sam 2> $FILE_tmp && getLog
+mv ${OUT}_unaligned.fastq ${OUT}_tmp.fastq
 
-### Change to temp directory
-cd ${DIR_tmp}
 
 for LEN in $(seq 5 5 $MAX2_TRIM)
 do
