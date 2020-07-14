@@ -31,14 +31,18 @@ if(scalar @FILE_maps < 2){
 # merge files
 #--------------------------------------------------------------
 my $FILE_master = shift @FILE_maps;
+my $fh_master;
+if($FILE_master =~ /\.gz/){
+	$fh_master = IO::File->new("gzip -dc $FILE_master |") or die "cannot open $FILE_master: $!";
+}else{
+	$fh_master = IO::File->new($FILE_master) or die "cannot open $FILE_master: $!";
+}
+my $Title = $fh_master->getline();
+my $READ_master = $fh_master->getline();
+$READ_master =~ s/\r?\n//; my @data_master = split /\t/, $READ_master;
+
 for my $file(@FILE_maps){
 	my @data_new;
-	my @data_master;
-
-	my $fh_master = IO::File->new($FILE_master) or die "cannot open $FILE_master: $!";
-	my $Title = $fh_master->getline();
-	my $READ_master = $fh_master->getline();
-	$READ_master =~ s/\r?\n//; @data_master = split /\t/, $READ_master;
 
 	my $fh_out = IO::File->new($TMP_working, 'w') or die "cannot write $TMP_working: $!";
 	$fh_out->print("$Title");
