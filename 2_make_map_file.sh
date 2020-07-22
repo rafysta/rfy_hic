@@ -21,10 +21,10 @@ Description
 		sample name
 
 	--f1 [fastq file(s)]
-		Comma-separated list of fastq to be aligned
+		Comma-separated list of compressed fastq to be aligned
 	
 	--f2 [fastq file(2)]
-		Comma-separated list of fastq to be aligned
+		Comma-separated list of compressed fastq to be aligned
 
 	-x, --ref [ex. hg19]
 		organism name
@@ -34,6 +34,9 @@ Description
 
 	-q, --fastqc
 		TRUE for doing fastqc analysis or FALSE for not doing (default FALSE)
+
+	--tmp
+		directory to store temporary file. (default /tmp)
 
 	--verbose
 		Output bowtie2 trimming alingment log
@@ -46,7 +49,7 @@ get_version(){
 }
 
 SHORT=hvd:n:x:r:q:
-LONG=help,version,directory:,name:,f1:,f2:,ref:,restriction:,fastqc:,verbose
+LONG=help,version,directory:,name:,f1:,f2:,ref:,restriction:,fastqc:,tmp:,verbose
 PARSED=`getopt --options $SHORT --longoptions $LONG --name "$0" -- "$@"`
 if [[ $? -ne 0 ]]; then
 	exit 2
@@ -91,6 +94,10 @@ while true; do
 			FLAG_fastqc="$2"
 			shift 2
 			;;
+		--tmp)
+			DIR_tmporary="$2"
+			shift 2
+			;;
 		--verbose)
 			VERBOSE=TRUE
 			shift
@@ -117,6 +124,7 @@ TIME_STAMP=$(date +"%Y-%m-%d")
 [ ! -n "${FILE_fastq2}" ] && echo "Please specify fastq file2" && exit 1
 FLAG_fastqc=${FLAG_fastqc:-FALSE}
 VERBOSE=${VERBOSE:-FALSE}
+DIR_tmporary=${DIR_tmporary:-"/tmp"}
 
 cd ${DIR_DATA}
 
@@ -130,11 +138,11 @@ source ${DIR_LIB}/utils/load_setting.sh -x $REF -r $RESTRICTION
 # Alignment
 #-----------------------------------------------
 export BOWTIE2_INDEX DIR_DATA VERBOSE
-export FILE_fastq=${FILE_fastq1} OUT=${NAME}_1
+export FILE_fastq=${FILE_fastq1} OUT=${NAME}_1 DIR_tmporary=${DIR_tmporary}
 sh ${DIR_LIB}/utils/Alignment_with_trimming.sh
 [ $? -ne 0 ] && exit 1
 
-export FILE_fastq=${FILE_fastq2} OUT=${NAME}_2
+export FILE_fastq=${FILE_fastq2} OUT=${NAME}_2 DIR_tmporary=${DIR_tmporary}
 sh ${DIR_LIB}/utils/Alignment_with_trimming.sh
 [ $? -ne 0 ] && exit 1
 
