@@ -8,7 +8,7 @@ fi
 DIR_LIB=$(dirname $0)
 PROGRAM_CIGAR=${DIR_LIB}/CigarFilter.pl
 VERBOSE=${VERBOSE:-FALSE}
-DIR_tmp=$(mktemp -d /tmp/tmp_${OUT}.XXXXX)
+DIR_tmp=$(mktemp -d ${DIR_tmporary}/tmp_${OUT}.XXXXX)
 FILE_log=${DIR_DATA}/${OUT}_bowtie2.log
 FILE_tmp=${DIR_tmp}/${OUT}_bowtie2_tmp.log
 
@@ -19,7 +19,7 @@ function getLog(){
 	cat $FILE_tmp | tr -d '()' | awk -v OFS='\t' 'NR>1&&NR<6{print $1,$2}' | xargs | tr ' ' '\t' >> $FILE_log && rm $FILE_tmp
 }
 
-less $(echo ${FILE_fastq} | tr ',' ' ') > ${DIR_tmp}/input.fastq
+zcat $(echo ${FILE_fastq} | tr ',' ' ') > ${DIR_tmp}/input.fastq
 
 ### Change to temp directory
 cd ${DIR_tmp}
