@@ -82,6 +82,17 @@ case $REF in
 					exit ;;
 			esac
 			;;
+	OR74A)	BOWTIE2_INDEX=${HOME}/Genome/data/neurospora_crassa/OR74A/Bowtie2/or74a
+			CHROM_LENGTH=40463072
+			FILE_CHROME_LENGTH=${HOME}/Genome/data/neurospora_crassa/OR74A/LENGTH_mainChromosome.txt
+			case $RESTRICTION in 
+				DpnII)	FILE_enzyme_index=${HOME}/Genome/neurospora_crassa/OR74A/Sectioning_DpnII.txt
+						FILE_enzyme_def=${HOME}/Genome/neurospora_crassa/OR74A/DpnII_sites.txt ;;
+				NA) ;;
+				*)	echo "$RESTRICTION is not registered for $ORGANISM"
+					exit ;;
+			esac
+			;;
 	hg19)	BOWTIE2_INDEX=${HOME}/Genome/data/human/hg19/Bowtie2/hg19
 			CHROM_LENGTH=3095677412
 			FILE_CHROME_LENGTH=${HOME}/Genome/data/human/hg19/LENGTH.txt
