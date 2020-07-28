@@ -9,7 +9,7 @@ DIR_LIB=$(dirname $0)
 PROGRAM_CIGAR=${DIR_LIB}/CigarFilter.pl
 VERBOSE=${VERBOSE:-FALSE}
 DIR_tmp=$(mktemp -d ${DIR_tmporary}/tmp_${OUT}.XXXXX)
-trap "rm ${DIR_tmp}" 0
+trap "rm -r ${DIR_tmp}" 0
 FILE_log=${DIR_DATA}/${OUT}_bowtie2.log
 FILE_tmp=${DIR_tmp}/${OUT}_bowtie2_tmp.log
 
