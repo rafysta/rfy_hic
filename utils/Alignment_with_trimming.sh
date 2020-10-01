@@ -25,7 +25,10 @@ function getError(){
 	exit 1
 }
 
-zcat $(echo ${FILE_fastq} | tr ',' ' ') > ${DIR_tmp}/input.fastq
+case "${FILE_fastq}" in
+	*.gz) zcat $(echo ${FILE_fastq} | tr ',' ' ') > ${DIR_tmp}/input.fastq;;
+	*) cat $(echo ${FILE_fastq} | tr ',' ' ') > ${DIR_tmp}/input.fastq;;
+esac
 
 ### Change to temp directory
 cd ${DIR_tmp}
