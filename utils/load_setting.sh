@@ -88,6 +88,8 @@ case $REF in
 			case $RESTRICTION in 
 				DpnII)	FILE_enzyme_index=${HOME}/Genome/data/neurospora_crassa/OR74A/Sectioning_DpnII.txt
 						FILE_enzyme_def=${HOME}/Genome/data/neurospora_crassa/OR74A/DpnII_sites.txt ;;
+				HindIII)	FILE_enzyme_index=${HOME}/Genome/data/neurospora_crassa/OR74A/Sectioning_HindIII.txt
+						FILE_enzyme_def=${HOME}/Genome/data/neurospora_crassa/OR74A/HindIII_sites.txt ;;
 				NA) ;;
 				*)	echo "$RESTRICTION is not registered for $ORGANISM"
 					exit ;;
