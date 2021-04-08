@@ -154,6 +154,10 @@ FLAG_dataframe=${FLAG_dataframe:-FALSE}
 
 DIR_LIB=$(dirname $0)
 
+### load module
+module load intel && module load R/4.0.2
+
+
 #-----------------------------------------------
 # Load setting
 #-----------------------------------------------

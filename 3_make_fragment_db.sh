@@ -112,6 +112,8 @@ FLAG_remove=${FLAG_remove:-FALSE}
 
 cd ${DIR_DATA}
 
+### load module
+module load intel && module load R/4.0.2
 
 #-----------------------------------------------
 # Remove all output file
