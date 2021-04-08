@@ -67,7 +67,7 @@ done
 [ ! -n "${RESTRICTION}" ] && echo "Please specify restriction" && exit 1
 
 case $REF in
-	pombe)	BOWTIE2_INDEX=${HOME}/Genome/data/pombe/2018/pombe
+	pombe)	BOWTIE2_INDEX=${HOME}/Genome/data/pombe/2018/Bowtie2/pombe
 			CHROM_LENGTH=12571820
 			FILE_CHROME_LENGTH=${HOME}/Genome/data/pombe/2018/LENGTH.txt
 			case $RESTRICTION in 
@@ -108,14 +108,23 @@ case $REF in
 					exit ;;
 			esac
 			;;
-	hg19_EBV)	BOWTIE2_INDEX=${HOME}/Genome/data/human/hg19_EBV/hg19_EBV
-			CHROM_LENGTH=3157782322
-			FILE_CHROME_LENGTH=${HOME}/Genome/data/human/hg19_EBV/LENGTH.txt
+	KC207813.1_hg19)	BOWTIE2_INDEX=${HOME}/Genome/data/ebv/KC207813.1_hg19/Bowtie2/EBV
+			CHROM_LENGTH=3095865306
+			FILE_CHROME_LENGTH=${HOME}/Genome/data/ebv/KC207813.1_hg19/LENGTH.txt
 			case $RESTRICTION in 
-				MboI)	FILE_enzyme_index=${HOME}/Genome/data/human/hg19_EBV/Sectioning_MboI.txt
-						FILE_enzyme_def=${HOME}/Genome/data/human/hg19_EBV/MboI_sites.txt;;
-				MboI-HinfI)	FILE_enzyme_index=${HOME}/Genome/data/human/hg19_EBV/Sectioning_MboI-HinfI.txt
-						FILE_enzyme_def=${HOME}/Genome/data/human/hg19_EBV/MboI-HinfI_sites.txt ;;
+				MboI)	FILE_enzyme_index=${HOME}/Genome/data/ebv/KC207813.1_hg19/Sectioning_MboI.txt
+						FILE_enzyme_def=${HOME}/Genome/data/ebv/KC207813.1_hg19/MboI_sites.txt;;
+				NA) ;;
+				*)	echo "$RESTRICTION is not registered for $ORGANISM"
+					exit ;;
+			esac
+			;;
+	V01555.2_hg19)	BOWTIE2_INDEX=${HOME}/Genome/data/ebv/V01555.2_hg19/Bowtie2/EBV
+			CHROM_LENGTH=3095866264
+			FILE_CHROME_LENGTH=${HOME}/Genome/data/ebv/V01555.2_hg19/LENGTH.txt
+			case $RESTRICTION in 
+				MboI)	FILE_enzyme_index=${HOME}/Genome/data/ebv/V01555.2_hg19/Sectioning_MboI.txt
+						FILE_enzyme_def=${HOME}/Genome/data/ebv/V01555.2_hg19/MboI_sites.txt;;
 				NA) ;;
 				*)	echo "$RESTRICTION is not registered for $ORGANISM"
 					exit ;;
