@@ -126,6 +126,9 @@ FLAG_fastqc=${FLAG_fastqc:-FALSE}
 VERBOSE=${VERBOSE:-FALSE}
 DIR_tmporary=${DIR_tmporary:-"/tmp"}
 
+### load module
+module load intel && module load R/4.0.2
+
 cd ${DIR_DATA}
 
 #-----------------------------------------------
