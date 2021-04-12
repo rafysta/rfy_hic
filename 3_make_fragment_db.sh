@@ -145,8 +145,7 @@ gzip ${NAME}_fragment_pair.txt
 #-----------------------------------------------
 # Distance curve
 #-----------------------------------------------
-perl ${DIR_LIB}/utils/Create_distanceNormalize_data.pl -i ${NAME}_fragment.db -l ${FILE_CHROME_LENGTH} -o ${NAME}_distance.txt
-
+sh ${DIR_LIB}/utils/Distance_curve.sh -i ${NAME}.map.gz -o ${NAME}_distance.txt
 
 #-----------------------------------------------
 # Fragment property
