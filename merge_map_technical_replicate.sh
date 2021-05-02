@@ -31,8 +31,8 @@ get_version(){
 	echo "sh ${0} version 1.0"
 }
 
-SHORT=hvi:d:n:
-LONG=help,version,in:,directory:,name:
+SHORT=hvi:d:n:x:
+LONG=help,version,in:,directory:,name:,ref:
 PARSED=`getopt --options $SHORT --longoptions $LONG --name "$0" -- "$@"`
 if [[ $? -ne 0 ]]; then
 	exit 2
@@ -61,6 +61,10 @@ while true; do
 			NAME="$2"
 			shift 2
 			;;
+		-x|--ref)
+			REF="$2"
+			shift 2
+			;;
 		--)
 			shift
 			break
@@ -78,22 +82,36 @@ TIME_STAMP=$(date +"%Y-%m-%d")
 [ ! -n "${NAME}" ] && echo "Please specify NAME" && exit 1
 [ ! -n "${DIR_DATA}" ] && echo "Please specify data directory" && exit 1
 [ ! -n "${FILE_IN}" ] && echo "Please specify map files for technical replicates for merging" && exit 1
+[ ! -n "${REF}" ] && echo "Please specify ref" && exit 1
+
+
+### load module
+module load intel && module load R/4.0.2
 
 cd ${DIR_DATA}
+
+#-----------------------------------------------
+# Load setting
+#-----------------------------------------------
+source ${DIR_LIB}/utils/load_setting.sh -x $REF -r NA
+
 
 #-----------------------------------------------
 # Merge map files
 #-----------------------------------------------
 NUM_MAP_file=$(echo $FILE_IN | tr ',' ' ' | xargs -n1 | wc -l)
 if [ $NUM_MAP_file -eq 1 ]; then
-	zcat $FILE_IN > ${NAME}.map
+	echo "Please specify at least 2 map files" && exit 1
 else
-	DIR_tmp=$(mktemp -d /tmp/tmp_${NAME}.XXXXX)
-	perl ${DIR_LIB}/utils/MergeMaps.pl -i "$FILE_IN" -o "${DIR_DATA}/${NAME}.map" -t ${DIR_tmp}
-	[ $? -ne 0 ] && echo "Merge failed" && exit 1
-	rm -r ${DIR_tmp}
-fi
+	echo $FILE_IN | tr ',' ' ' | xargs -n1 | xargs -I@ sh -c "zcat @ | tail -n +2 " > ${NAME}.map
 
+	perl ${DIR_LIB}/utils/Split_MapFile.pl -i ${DIR_DATA}/${NAME}.map -l ${CHROM_LENGTH} -o ${NAME}_list.txt
+	[ $? -ne 0 ] && echo "Split mapfile was failed" && exit 1
+	cat ${NAME}_list.txt | xargs -P12 -I@ sh -c "sort -k2,2 -k3,3n -k9,9 -k10,10n @ | awk -v OFS='\t' '{print \$0,\$2,\$3,\$9,\$10}' | uniq -f 15 | cut -f1-15 > @_sorted && mv @_sorted @"
+	echo "id,chr1,position1,direction1,mapQ1,restNum1,restLoc1,uniq1,chr2,position2,direction2,mapQ2,restNum2,restLoc2,uniq2" | tr ',' '\t' > ${NAME}.map
+	cat $(cat ${NAME}_list.txt) >> ${NAME}.map
+	rm $(cat ${NAME}_list.txt) ${NAME}_list.txt
+fi
 
 #-----------------------------------------------
 # Register to database
