@@ -12,37 +12,22 @@ $| = 0;
 
 use DBI;
 
-if((@ARGV != 8 and @ARGV != 10 and @ARGV != 12) or $ARGV[0] eq '--help'){
-	die "Usage : $0 -i [detabase files] -o [output prefix] -r [resolution] -d [distance normalize file] -b [black list of fragment] -c [chromosome list]\n";
+if((@ARGV != 10 and @ARGV != 12) or $ARGV[0] eq '--help'){
+	die "Usage : $0 -i [detabase files] -o [output prefix] -r [resolution] -b [black list of fragment] -c [chromosome list] -t [threshod of different direction read cut-off]\n";
 }
 
 my %opt;
-getopts("i:o:r:d:b:c:", \%opt);
+getopts("i:o:r:b:c:t:", \%opt);
 my $FILE_database = $opt{i};
 my $FILE_out_prefix = $opt{o};
 my $Resolution = $opt{r};
-my $FILE_distance = $opt{d};
 my $FILE_black = $opt{b};
+my $THRESHOLD_SELF = $opt{t};
 my @chromosomes = split /,/, $opt{c};
 
 
 # 全データを入れる変数
 my %data;
-
-
-#---------------------------------------
-# Distance curveを読み込む
-#---------------------------------------
-my %AVE;
-if(defined $FILE_distance){
-	my $fh_dis = IO::File->new($FILE_distance) or die "cannot open $FILE_distance: $!";
-	while($_ = $fh_dis->getline()){
-		s/\r?\n//;
-		my ($chr1, $chr2, $d, $score, $probability) = split /\t/;
-		$AVE{"$chr1\t$chr2\t$d"} = $probability;
-	}
-	$fh_dis->close();
-}
 
 #---------------------------------------
 # fragmentのblack listを読み込む
@@ -90,10 +75,10 @@ $sth_data->execute();
 while(my $ref = $sth_data->fetchrow_arrayref()){
 	my ($chr1, $start1, $end1, $frag1, $chr2, $start2, $end2, $frag2, $score) = @$ref;
 
-	# 隣同士のfragmentはカウントしない
-	if(abs($frag1 - $frag2) < 2){
-		next;
-	}
+	# # 隣同士のfragmentはカウントしない
+	# if(abs($frag1 - $frag2) < 2){
+	# 	next;
+	# }
 
 	# fragmentがblack listに含まれていたら計算しない
 	if(exists $Black{"$chr1\t$frag1"}){
@@ -107,74 +92,9 @@ while(my $ref = $sth_data->fetchrow_arrayref()){
 	my $middle2 = ($start2 + $end2) / 2;
 	my $distance = abs($middle1 - $middle2);
 
-	# 10kb以内の距離だった場合には、scoreを２倍にする
-	# (10kb以内については、同じ向きのデータしか無いから)
-	if($distance < 10000){
+	# self ligationの距離以内(defaultでは10kb)の距離だった場合には、scoreを２倍にする(同じ向きのデータしか無いから)
+	if($distance < $THRESHOLD_SELF){
 		$score = $score * 2;
-	}
-
-
-	my $distanceAve1 = 1;
-	my $distanceAve2 = 1;
-	my $distanceAve3 = 1;
-	my $distanceAve4 = 1;
-
-	if(defined $FILE_distance){
-		# calculate distance average score
-		my ($logDistance1, $logDistance2, $logDistance3, $logDistance4) = (-1, -1, -1, -1);
-
-		my $distance1 = abs($start1 - $start2);
-		my $distance2 = abs($start1 - $end2);
-		my $distance3 = abs($end1 - $start2);
-		my $distance4 = abs($end1 - $end2);
-
-		$distance1 = int($distance1 / 100) * 100 + 50;
-		$distance2 = int($distance2 / 100) * 100 + 50;
-		$distance3 = int($distance3 / 100) * 100 + 50;
-		$distance4 = int($distance4 / 100) * 100 + 50;
-
-		if($distance1 < 50000){
-			$logDistance1 = $distance1;
-		}else{
-			$logDistance1 = exp(sprintf("%.3f", log($distance1)));
-			$logDistance1 = sprintf("%d", $logDistance1);
-		}
-		if($distance2 < 50000){
-			$logDistance2 = $distance2;
-		}else{
-			$logDistance2 = exp(sprintf("%.3f", log($distance2)));
-			$logDistance2 = sprintf("%d", $logDistance2);
-		}
-		if($distance3 < 50000){
-			$logDistance3 = $distance3;
-		}else{
-			$logDistance3 = exp(sprintf("%.3f", log($distance3)));
-			$logDistance3 = sprintf("%d", $logDistance3);
-		}
-		if($distance4 < 50000){
-			$logDistance4 = $distance4;
-		}else{
-			$logDistance4 = exp(sprintf("%.3f", log($distance4)));
-			$logDistance4 = sprintf("%d", $logDistance4);
-		}
-
-		unless(exists $AVE{"$chr1\t$chr2\t$logDistance1"}){
-			die "$chr1\t$chr2\t$logDistance1\n";
-		}
-		unless(exists $AVE{"$chr1\t$chr2\t$logDistance2"}){
-			die "$chr1\t$chr2\t$logDistance2\n";
-		}
-		unless(exists $AVE{"$chr1\t$chr2\t$logDistance3"}){
-			die "$chr1\t$chr2\t$logDistance3\n";
-		}
-		unless(exists $AVE{"$chr1\t$chr2\t$logDistance4"}){
-			die "$chr1\t$chr2\t$logDistance4\n";
-		}
-
-		$distanceAve1 = $AVE{"$chr1\t$chr2\t$logDistance1"};
-		$distanceAve2 = $AVE{"$chr1\t$chr2\t$logDistance2"};
-		$distanceAve3 = $AVE{"$chr1\t$chr2\t$logDistance3"};
-		$distanceAve4 = $AVE{"$chr1\t$chr2\t$logDistance4"};
 	}
 
 	my $bin1a = int($start1/$Resolution) * $Resolution;
@@ -191,12 +111,11 @@ while(my $ref = $sth_data->fetchrow_arrayref()){
 	# 4つの組み合わせに均等に分配する
 	$score = $score / 4;
 
-
 	# count data（既に左側が小さいということは保証されている）
-	$data{$id1a}{$id2a} += $score / $distanceAve1;
-	$data{$id1a}{$id2b} += $score / $distanceAve2;
-	$data{$id1b}{$id2a} += $score / $distanceAve3;
-	$data{$id1b}{$id2b} += $score / $distanceAve4;
+	$data{$id1a}{$id2a} += $score;
+	$data{$id1a}{$id2b} += $score;
+	$data{$id1b}{$id2a} += $score;
+	$data{$id1b}{$id2b} += $score;
 
 }
 $sth_data->finish();

@@ -32,6 +32,10 @@ Description
 	-r, --restriction [HindIII|MboI|MboI-HinfI]
 		name for restriction
 
+	-t, --threshold [threshold. default: 10000]
+		threshold to remove different direction reads to remove potential self ligation. (default 10kb)
+		We use 2kb for 3 restriction enzyme Hi-C
+
 	-q, --fastqc
 		TRUE for doing fastqc analysis or FALSE for not doing (default FALSE)
 
@@ -48,8 +52,8 @@ get_version(){
 	echo "sh ${0} version 1.0"
 }
 
-SHORT=hvd:n:x:r:q:
-LONG=help,version,directory:,name:,f1:,f2:,ref:,restriction:,fastqc:,tmp:,verbose
+SHORT=hvd:n:x:r:t:q:
+LONG=help,version,directory:,name:,f1:,f2:,ref:,restriction:,threshold:,fastqc:,tmp:,verbose
 PARSED=`getopt --options $SHORT --longoptions $LONG --name "$0" -- "$@"`
 if [[ $? -ne 0 ]]; then
 	exit 2
@@ -94,6 +98,10 @@ while true; do
 			FLAG_fastqc="$2"
 			shift 2
 			;;
+		-t|--threshold)
+			THRESHOLD_SELF="$2"
+			shift 2
+			;;
 		--tmp)
 			DIR_tmporary="$2"
 			shift 2
@@ -125,6 +133,7 @@ TIME_STAMP=$(date +"%Y-%m-%d")
 FLAG_fastqc=${FLAG_fastqc:-FALSE}
 VERBOSE=${VERBOSE:-FALSE}
 DIR_tmporary=${DIR_tmporary:-"/tmp"}
+THRESHOLD_SELF=${THRESHOLD_SELF:-10000}
 
 ### load module
 module load intel && module load R/4.0.2
@@ -195,7 +204,7 @@ fi
 #-----------------------------------------------
 # Summarize read filtering
 #-----------------------------------------------
-export DIR_DATA SAMPLE=${NAME}
+export DIR_DATA SAMPLE=${NAME} THRESHOLD_SELF=${THRESHOLD_SELF}
 sh ${DIR_LIB}/utils/Count_reads.sh > ${NAME}_read_filtering.log
 
 

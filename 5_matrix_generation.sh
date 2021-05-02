@@ -29,9 +29,9 @@ Description
 		list of excluding chromosomes. Separated by ,. Ex. chrM,chrY
 
 	-r, --resolution [ex. 500kb]
-		map resolution
+		map resolution. 1 for single fragment resolution
 
-	-t, --intra [TRUE/FALSE]
+	--intra [TRUE/FALSE]
 		onlyt intra chromosome (TRUE) or all (FALSE). Default : TRUE
 	
 	-e, --normalization [TRUE/FALSE]
@@ -42,6 +42,10 @@ Description
 	
 	--use_blacklist [TRUE/FALSE]
 		use fragment blacklist to eliminate strange ones. Default : TRUE
+
+	-t, --threshold [threshold. default: 10000]
+		threshold to remove different direction reads to remove potential self ligation. (default 10kb)
+		We use 2kb for 3 restriction enzyme Hi-C
 
 	--dataframe
 		instead of matrices, output as data frame format
@@ -56,8 +60,8 @@ get_version(){
 	echo "${0} version 1.0"
 }
 
-SHORT=hvd:n:x:r:t:e:c:
-LONG=help,version,directory:,name:,ref:,include:,exclude:,resolution:,intra:,normalization:,raw:,use_blacklist:,dataframe,max_distance:
+SHORT=hvd:n:x:r:e:c:t:
+LONG=help,version,directory:,name:,ref:,include:,exclude:,resolution:,intra:,normalization:,raw:,use_blacklist:,threshold:,dataframe,max_distance:
 PARSED=`getopt --options $SHORT --longoptions $LONG --name "$0" -- "$@"`
 if [[ $? -ne 0 ]]; then
 	exit 2
@@ -101,7 +105,7 @@ while true; do
 			RESOLUTION=${RESOLUTION/bp/}
 			shift 2
 			;;
-		-t|--intra)
+		--intra)
 			# if only intra chromosome TRUE, otherwise FALSE (default TRUE)
 			FLAG_INTRA="$2"
 			shift 2
@@ -117,6 +121,10 @@ while true; do
 			;;
 		--use_blacklist)
 			FLAG_blacklist="$2"
+			shift 2
+			;;
+		-t|--threshold)
+			THRESHOLD_SELF="$2"
 			shift 2
 			;;
 		--dataframe)
@@ -151,6 +159,8 @@ CHR_exclude=${CHR_exclude:-NA}
 [ "$FLAG_blacklist" = "TRUE" ] && [ ! -e ${DIR_DATA}/${NAME}_bad_fragment.txt ] && echo "bad fragment list not exists" && exit 1
 FLAG_dataframe=${FLAG_dataframe:-FALSE}
 [ "$FLAG_dataframe" = "TRUE" ] && [ ! -n "$THRESHOLD_MAX_DISTANCE" ] && echo "If output as dataframe format, please specify maximum distance" && exit 1
+THRESHOLD_SELF=${THRESHOLD_SELF:-10000}
+
 
 DIR_LIB=$(dirname $0)
 
@@ -220,9 +230,9 @@ if [ $FLAG_RAW = "TRUE" ]; then
 		PRO_RAW_matrix=${DIR_LIB}/utils/Make_association_from_fragmentdb_allChromosome.pl
 	fi
 	if [ "$FLAG_blacklist" = "TRUE" ] && [ -e ${DIR_DATA}/${NAME}_bad_fragment.txt ]; then
-		perl $PRO_RAW_matrix -i ${NAME}_fragment.db -o ${NAME}/${RESOLUTION_string}/Raw/  -r ${RESOLUTION} -b ${NAME}_bad_fragment.txt -c $CHRs_list
+		perl $PRO_RAW_matrix -i ${NAME}_fragment.db -o ${NAME}/${RESOLUTION_string}/Raw/  -r ${RESOLUTION} -b ${NAME}_bad_fragment.txt -c $CHRs_list -t ${THRESHOLD_SELF}
 	else
-		perl $PRO_RAW_matrix -i ${NAME}_fragment.db -o ${NAME}/${RESOLUTION_string}/Raw/  -r ${RESOLUTION} -c $CHRs_list
+		perl $PRO_RAW_matrix -i ${NAME}_fragment.db -o ${NAME}/${RESOLUTION_string}/Raw/  -r ${RESOLUTION} -c $CHRs_list -t ${THRESHOLD_SELF}
 	fi
 
 	if [ $FLAG_INTRA = "TRUE" ]; then

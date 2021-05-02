@@ -9,12 +9,12 @@ use Carp qw(croak);
 $| = 0;
 
 
-if((@ARGV != 8 and @ARGV != 10) or $ARGV[0] eq '--help'){
-	die "Usage : $0 -i [list of map file (it can be gziped) separated by cammma] -l [chromosome length] -o [file list] -m [mapQ threshold (default:30)] -e [enzyme definition file]\n";
+if((@ARGV != 10 and @ARGV != 12) or $ARGV[0] eq '--help'){
+	die "Usage : $0 -i [list of map file (it can be gziped) separated by cammma] -l [chromosome length] -o [file list] -m [mapQ threshold (default:30)] -e [enzyme definition file] -t [threshod of different direction read cut-off]\n";
 }
 
 my %opt;
-getopts("i:l:o:m:e:", \%opt);
+getopts("i:l:o:m:e:t:", \%opt);
 my @FILE_maps = split /,/, $opt{i};
 my $CHROM_LENGTH = $opt{l};
 my $FILE_list = $opt{o};
@@ -24,7 +24,7 @@ my $MAPQ_threshold = $opt{m};
 unless(defined $MAPQ_threshold){
 	$MAPQ_threshold = 30;
 }
-
+my $THRESHOLD_SELF = $opt{t};
 my $FILE_ENZYME_def = $opt{e};
 
 
@@ -100,8 +100,8 @@ foreach my $file (@FILE_maps){
 			exit 1;
 		}
 
-		# Remove self ligation and potential un-digested pairs (less than 10kb and different directions)
-		if($chr1 eq $chr2 and abs($middle1 - $middle2) < 10000 and $direction1 ne $direction2){
+		# Remove self ligation and potential un-digested pairs (less than direction cut-off and different directions)
+		if($chr1 eq $chr2 and abs($middle1 - $middle2) < $THRESHOLD_SELF and $direction1 ne $direction2){
 			next;
 		}
 
