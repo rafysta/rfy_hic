@@ -8,10 +8,18 @@ fi
 DIR_LIB=$(dirname $0)
 PROGRAM_CIGAR=${DIR_LIB}/CigarFilter.pl
 VERBOSE=${VERBOSE:-FALSE}
-DIR_tmp=$(mktemp -d ${DIR_tmporary}/tmp_${OUT}.XXXXX)
-trap "rm -r ${DIR_tmp}" 0
-FILE_log=${DIR_DATA}/${OUT}_bowtie2.log
-FILE_tmp=${DIR_tmp}/${OUT}_bowtie2_tmp.log
+DEBUG=${DEBUG:-FALSE}
+if [ $DEBUG == "TRUE" ]; then
+	VERBOSE=TRUE
+	DIR_tmp=${DIR_tmporary}
+	FILE_log=${DIR_tmp}/${OUT}_bowtie2.log
+	FILE_tmp=${DIR_tmp}/${OUT}_bowtie2_tmp.log
+else
+	DIR_tmp=$(mktemp -d ${DIR_tmporary}/tmp_${OUT}.XXXXX)
+	trap "rm -r ${DIR_tmp}" 0
+	FILE_log=${DIR_DATA}/${OUT}_bowtie2.log
+	FILE_tmp=${DIR_tmp}/${OUT}_bowtie2_tmp.log
+fi
 
 echo "Length Total % NoAlign % Unique % Multiple %" | tr ' ' '\t' > $FILE_log
 function getLog(){
@@ -21,7 +29,7 @@ function getLog(){
 function getError(){
 	echo "Bowtie2 failed for the alignment while $1"
 	mv $FILE_tmp ${DIR_DATA}/${OUT}_bowtie2_error.log
-	rm -rf ${DIR_tmp}
+	[ $DEBUG == "FALSE" ] && rm -rf ${DIR_tmp}
 	exit 1
 }
 
@@ -83,10 +91,10 @@ fi
 
 samtools sort -n ${OUT}.bam -o ${OUT}_sort.bam -T tmpBamSort_${OUT}
 samtools view ${OUT}_sort.bam > ${OUT}.sam 
-rm ${OUT}_sort.bam ${OUT}.bam
+mv ${OUT}_sort.bam ${OUT}.bam
 
 ### Transfer to data directory
-mv ${OUT}.sam ${DIR_DATA}/${OUT}.sam
-
-rm -r ${DIR_tmp}
+[ $DEBUG == "FALSE" ] && mv ${OUT}.sam ${DIR_DATA}/${OUT}.sam
+[ $DEBUG == "FALSE" ] && mv ${OUT}.bam ${DIR_DATA}/${OUT}.bam
+[ $DEBUG == "FALSE" ] && rm -r ${DIR_tmp}
 exit 0
