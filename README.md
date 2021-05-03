@@ -1,6 +1,5 @@
 # rfy_hic
 fastqファイルから、matricesを作るためのHi-C自動解析パイプラインです。
-質問等は、谷澤英樹 ( rafysta@gmail.com ) まで。
 
 ## 以下の順番で、プログラムを実行してください。
 1. 2_make_map_file.sh - fastqファイルをbowtie2でalignmentして各種filteringを行います。map.txt.gzファイルができるので、このファイルを使ってJuicerファイルの作成もできます。
