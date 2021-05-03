@@ -31,8 +31,8 @@ get_version(){
 	echo "sh ${0} version 1.0"
 }
 
-SHORT=hvi:d:n:x:
-LONG=help,version,in:,directory:,name:,ref:
+SHORT=hvi:d:n:x:t:
+LONG=help,version,in:,directory:,name:,ref:,threshold:
 PARSED=`getopt --options $SHORT --longoptions $LONG --name "$0" -- "$@"`
 if [[ $? -ne 0 ]]; then
 	exit 2
@@ -65,6 +65,9 @@ while true; do
 			REF="$2"
 			shift 2
 			;;
+		-t, --threshold [threshold. default: 10000]
+			threshold to remove different direction reads to remove potential self ligation. (default 10kb)
+			We use 2kb for 3 restriction enzyme Hi-C
 		--)
 			shift
 			break
@@ -83,7 +86,7 @@ TIME_STAMP=$(date +"%Y-%m-%d")
 [ ! -n "${DIR_DATA}" ] && echo "Please specify data directory" && exit 1
 [ ! -n "${FILE_IN}" ] && echo "Please specify map files for technical replicates for merging" && exit 1
 [ ! -n "${REF}" ] && echo "Please specify ref" && exit 1
-
+THRESHOLD_SELF=${THRESHOLD_SELF:-10000}
 
 ### load module
 module load intel && module load R/4.0.2
@@ -122,7 +125,7 @@ gzip ${NAME}.map
 #-----------------------------------------------
 # Summarize read filtering
 #-----------------------------------------------
-export DIR_DATA SAMPLE=${NAME}
+export DIR_DATA SAMPLE=${NAME} THRESHOLD_SELF=${THRESHOLD_SELF}
 sh ${DIR_LIB}/utils/Count_reads.sh > ${NAME}_read_filtering.log
 
 #-----------------------------------------------
