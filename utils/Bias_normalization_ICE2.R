@@ -7,7 +7,8 @@ option_list <- list(
   make_option(c("--log"), default="NA", help="log file"),
   make_option(c("--inter"), default="NA", help="read for inter-chromosome"),
   make_option(c("--times"), default="30", help="how many times apply normalization"),
-  make_option(c("-t", "--threshold"), default="0.02", help="cut off threshold (%). Line with less than this value will remove"),
+  make_option(c("-t", "--threshold"), default=1000, help="cut off threshold (default 1000). Line with less than this value will remove.
+                Value with less than 10 will be considered as %. (0.02 was used in the past)"),
   make_option(c("-q", "--quiet"), default="FALSE", help="don't output log")
 )
 opt <- parse_args(OptionParser(option_list=option_list))
@@ -37,7 +38,12 @@ if(!file.exists(FILE_object)){
 r <- rownames(map)
 
 SUM_bin <- apply(map, 1, sum)
-index_remove <- which(SUM_bin < quantile(SUM_bin[SUM_bin > 0],prob=Threshold))
+
+if(Threshold > 10){
+  index_remove <- which(SUM_bin < Threshold)  # considered threshold as read number
+}else{
+  index_remove <- which(SUM_bin < quantile(SUM_bin[SUM_bin > 0],prob=Threshold))   # # considered threshold as % 
+}
 map[index_remove, ] <- NA
 map[,index_remove] <- NA
 
