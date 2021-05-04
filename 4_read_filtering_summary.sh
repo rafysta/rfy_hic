@@ -89,8 +89,16 @@ do
 	fi
 	
 	echo $NAME > $tmpfile
-	tail -n 4 $FILE_map | cut -f2 >> $tmpfile
-	cut -f2 -d: ${FILE_count} | sed 's/^ //' >> $tmpfile
+	if [ -e $FILE_map ]; then
+		tail -n 4 $FILE_map | cut -f2 >> $tmpfile
+	else
+		printf "%.0s\n" {1..4} >> $tmpfile
+	fi
+	if [ -e ${FILE_count} ]; then
+		cut -f2 -d: ${FILE_count} | sed 's/^ //' >> $tmpfile
+	else
+		printf "%.0s\n" {1..11} >> $tmpfile
+	fi
 	paste $FILE_OUT $tmpfile > $tmpfile2
 	mv $tmpfile2 $FILE_OUT
 done
