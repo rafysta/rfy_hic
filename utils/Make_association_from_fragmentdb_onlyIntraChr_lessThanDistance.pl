@@ -77,7 +77,7 @@ while(my $ref = $sth_data->fetchrow_arrayref()){
 
 	# max distanceよりも離れている組み合わせ
 	my $FLAG_longDistance = 0;
-	if($distance > $MAX_DISTANCE or $chr1 != $chr2){
+	if($distance > $MAX_DISTANCE or $chr1 ne $chr2){
 		$FLAG_longDistance = 1;
 	}
 
@@ -132,7 +132,7 @@ $dbh->disconnect();
 my $fh_out = IO::File->new($FILE_out, 'w') or die "cannot write $FILE_out: $!";
 $fh_out->print("loc1\tloc2\tscore\n");
 foreach my $key(keys %data){
-	$fh_out->printf("%s\t%f.2f\n", $key, $data{$key});
+	$fh_out->printf("%s\t%.2f\n", $key, $data{$key});
 }
 $fh_out->close();
 

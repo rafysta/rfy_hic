@@ -96,5 +96,4 @@ mv ${OUT}_sort.bam ${OUT}.bam
 ### Transfer to data directory
 [ $DEBUG == "FALSE" ] && mv ${OUT}.sam ${DIR_DATA}/${OUT}.sam
 [ $DEBUG == "FALSE" ] && mv ${OUT}.bam ${DIR_DATA}/${OUT}.bam
-[ $DEBUG == "FALSE" ] && rm -r ${DIR_tmp}
 exit 0

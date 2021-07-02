@@ -136,7 +136,9 @@ DIR_tmporary=${DIR_tmporary:-"/tmp"}
 THRESHOLD_SELF=${THRESHOLD_SELF:-10000}
 
 ### load module
-module load intel && module load R/4.0.2
+module purge
+module load intel 2> /dev/null
+module load R/4.0.2
 
 cd ${DIR_DATA}
 
@@ -161,10 +163,8 @@ sh ${DIR_LIB}/utils/Alignment_with_trimming.sh
 #-----------------------------------------------
 # fastqc
 #-----------------------------------------------
-if hash module 2>/dev/null; then
-	module load fastqc
-fi
 if [ "$FLAG_fastqc" = "TRUE" ]; then
+	module load fastqc
 	[ ! -e "${DIR_DATA}/fastqc" ] && mkdir "${DIR_DATA}/fastqc"
 	fastqc -o fastqc/ --nogroup -t 12 $(echo ${FILE_fastq1} | tr ',' ' ')
 	fastqc -o fastqc/ --nogroup -t 12 $(echo ${FILE_fastq2} | tr ',' ' ')
