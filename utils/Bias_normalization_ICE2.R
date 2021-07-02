@@ -62,7 +62,7 @@ Single <- function(m, b){
   
   # inter-chromosomeの値があるときにはbias修正
   if(FILE_inter != "NA"){
-    Db <- Db + INTER / b / mean(b[b!=0], na.rm=T)
+    Db <- Db + INTER / (b / mean(b[b!=0], na.rm=T))
   }
   
   Db <- Db / mean(Db[Db != 0])
@@ -77,7 +77,6 @@ Single <- function(m, b){
 
 
 multi <- function(m, times){
-  Variances <- c()
   B <- rep(1, length(r))
   
   # 初期のvarianceを求める
