@@ -16,6 +16,9 @@ Description
 	-d, --directory [data directory]
 		directory name of analysis file locate
 
+	-o, --out [output directory]
+		default: same as data directory
+
 	-n, --name [sample name]
 		sample name
 	
@@ -47,11 +50,8 @@ Description
 		threshold to remove different direction reads to remove potential self ligation. (default 10kb)
 		We use 2kb for 3 restriction enzyme Hi-C
 
-	--dataframe
-		instead of matrices, output as data frame format
-
 	--max_distance [maximum distance]
-		if output as dataframe format, what is the maximum distance
+		maximum distance of output.
 EOF
 
 }
@@ -60,8 +60,8 @@ get_version(){
 	echo "${0} version 1.0"
 }
 
-SHORT=hvd:n:x:r:e:c:t:
-LONG=help,version,directory:,name:,ref:,include:,exclude:,resolution:,intra:,normalization:,raw:,use_blacklist:,threshold:,dataframe,max_distance:
+SHORT=hvd:o:n:x:r:e:c:t:
+LONG=help,version,directory:,out:,name:,ref:,include:,exclude:,resolution:,intra:,normalization:,raw:,use_blacklist:,threshold:,max_distance:
 PARSED=`getopt --options $SHORT --longoptions $LONG --name "$0" -- "$@"`
 if [[ $? -ne 0 ]]; then
 	exit 2
@@ -80,6 +80,10 @@ while true; do
 			;;
 		-d|--directory)
 			DIR_DATA="$2"
+			shift 2
+			;;
+		-o|--out)
+			DIR_OUT="$2"
 			shift 2
 			;;
 		-n|--name)
@@ -127,11 +131,8 @@ while true; do
 			THRESHOLD_SELF="$2"
 			shift 2
 			;;
-		--dataframe)
-			FLAG_dataframe="TRUE"
-			shift 1
-			;;
 		--max_distance)
+			FLAG_dataframe="TRUE"
 			THRESHOLD_MAX_DISTANCE="$2"
 			shift 2
 			;;
@@ -160,12 +161,17 @@ CHR_exclude=${CHR_exclude:-NA}
 FLAG_dataframe=${FLAG_dataframe:-FALSE}
 [ "$FLAG_dataframe" = "TRUE" ] && [ ! -n "$THRESHOLD_MAX_DISTANCE" ] && echo "If output as dataframe format, please specify maximum distance" && exit 1
 THRESHOLD_SELF=${THRESHOLD_SELF:-10000}
+DIR_OUT=${DIR_OUT:-"${DIR_DATA}/${NAME}/${RESOLUTION_string}"}
+
+[ ! -e ${DIR_OUT} ] && mkdir -p ${DIR_OUT}
 
 
 DIR_LIB=$(dirname $0)
 
 ### load module
-module load intel && module load R/4.0.2
+module purge
+module load intel 2> /dev/null
+module load R/4.0.2
 
 
 #-----------------------------------------------
@@ -183,34 +189,34 @@ LENGTH=($(echo $CHR_TABLE | xargs -n1 | awk 'NR==2' | tr ',' ' '))
 CHRs_list=$(echo ${CHRs[@]} | tr ' ' ',')
 
 
-if [ ! -e ${DIR_DATA}/${NAME} ]; then
-	mkdir ${DIR_DATA}/${NAME}
-fi
-if [ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string} ]; then
-	mkdir ${DIR_DATA}/${NAME}/${RESOLUTION_string}
-fi
 
 
 #==============================================================
-# dataframe formatの場合
+# 最大距離のしきい値がある場合は、dataframe formatで出力する
 #==============================================================
 if [ $FLAG_dataframe = "TRUE" ]; then
-	if [ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/Raw ]; then
-		mkdir ${DIR_DATA}/${NAME}/${RESOLUTION_string}/Raw
+	if [ ! -e ${DIR_OUT}/Raw ]; then
+		mkdir -p ${DIR_OUT}/Raw
+	fi
+	if [ ! -e ${DIR_OUT}/ICE2 ]; then
+		mkdir -p ${DIR_OUT}/ICE2
 	fi
 	cd ${DIR_DATA};
-	if [ "$FLAG_blacklist" = "TRUE" ] && [ -e ${DIR_DATA}/${NAME}_bad_fragment.txt ]; then
-		perl ${DIR_LIB}/utils/Make_association_from_fragmentdb_onlyIntraChr_lessThanDistance.pl -i ${NAME}_fragment.db -o ${NAME}/${RESOLUTION_string}/Raw/  -r ${RESOLUTION} -b ${NAME}_bad_fragment.txt -c $CHRs_list -m $THRESHOLD_MAX_DISTANCE -d ${NAME}_distance.txt
-	else
-		perl ${DIR_LIB}/utils/Make_association_from_fragmentdb_onlyIntraChr_lessThanDistance.pl -i ${NAME}_fragment.db -o ${NAME}/${RESOLUTION_string}/Raw/  -r ${RESOLUTION} -c $CHRs_list -m $THRESHOLD_MAX_DISTANCE  -d ${NAME}_distance.txt
-	fi
-
-	cd ${DIR_DATA}/${NAME}/${RESOLUTION_string}/Raw
+	
 	for i in $(seq 1 ${#CHRs[@]})
 	do
 		let index=i-1
 		CHR=${CHRs[index]}
-		Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_dataframe_to_object.R -i ${CHR}_dataframe.txt -o ${CHR}_dataframe.rds
+		if [ "$FLAG_blacklist" = "TRUE" ] && [ -e ${DIR_DATA}/${NAME}_bad_fragment.txt ]; then
+			perl ${DIR_LIB}/utils/Make_association_from_fragmentdb_onlyIntraChr_lessThanDistance.pl -i ${NAME}_fragment.db -o ${DIR_OUT}/Raw/${CHR}_$THRESHOLD_MAX_DISTANCE.txt -c ${CHR} -r ${RESOLUTION} -b ${DIR_DATA}/${NAME}_bad_fragment.txt -m $THRESHOLD_MAX_DISTANCE -t $THRESHOLD_SELF
+		else
+			perl ${DIR_LIB}/utils/Make_association_from_fragmentdb_onlyIntraChr_lessThanDistance.pl -i ${NAME}_fragment.db -o ${DIR_OUT}/Raw/${CHR}_$THRESHOLD_MAX_DISTANCE.txt -c ${CHR} -r ${RESOLUTION} -m $THRESHOLD_MAX_DISTANCE -t $THRESHOLD_SELF
+		fi
+
+		Rscript --vanilla --slave ${DIR_LIB}/utils/Bias_normalization_ICE2_distanceRestrict.R -i ${DIR_OUT}/Raw/${CHR}_$THRESHOLD_MAX_DISTANCE.txt -o ${DIR_OUT}/ICE2/${CHR}_$THRESHOLD_MAX_DISTANCE.txt --times 30
+
+		gzip ${DIR_OUT}/Raw/${CHR}_$THRESHOLD_MAX_DISTANCE.txt
+		gzip ${DIR_OUT}/ICE2/${CHR}_$THRESHOLD_MAX_DISTANCE.txt
 	done
 	exit
 fi
@@ -220,8 +226,8 @@ fi
 # Raw matrixの作成
 #==============================================================
 if [ $FLAG_RAW = "TRUE" ]; then
-	if [ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/Raw ]; then
-		mkdir ${DIR_DATA}/${NAME}/${RESOLUTION_string}/Raw
+	if [ ! -e ${DIR_OUT}/Raw ]; then
+		mkdir -p ${DIR_OUT}/Raw
 	fi
 	cd ${DIR_DATA};
 	if [ $FLAG_INTRA = "TRUE" ]; then
@@ -230,13 +236,13 @@ if [ $FLAG_RAW = "TRUE" ]; then
 		PRO_RAW_matrix=${DIR_LIB}/utils/Make_association_from_fragmentdb_allChromosome.pl
 	fi
 	if [ "$FLAG_blacklist" = "TRUE" ] && [ -e ${DIR_DATA}/${NAME}_bad_fragment.txt ]; then
-		perl $PRO_RAW_matrix -i ${NAME}_fragment.db -o ${NAME}/${RESOLUTION_string}/Raw/  -r ${RESOLUTION} -b ${NAME}_bad_fragment.txt -c $CHRs_list -t ${THRESHOLD_SELF}
+		perl $PRO_RAW_matrix -i ${NAME}_fragment.db -o ${DIR_OUT}/Raw/  -r ${RESOLUTION} -b ${DIR_DATA}/${NAME}_bad_fragment.txt -c $CHRs_list -t ${THRESHOLD_SELF}
 	else
-		perl $PRO_RAW_matrix -i ${NAME}_fragment.db -o ${NAME}/${RESOLUTION_string}/Raw/  -r ${RESOLUTION} -c $CHRs_list -t ${THRESHOLD_SELF}
+		perl $PRO_RAW_matrix -i ${NAME}_fragment.db -o ${DIR_OUT}/Raw/  -r ${RESOLUTION} -c $CHRs_list -t ${THRESHOLD_SELF}
 	fi
 
 	if [ $FLAG_INTRA = "TRUE" ]; then
-		cd ${DIR_DATA}/${NAME}/${RESOLUTION_string}/Raw
+		cd ${DIR_OUT}/Raw
 		for i in $(seq 1 ${#CHRs[@]})
 		do
 			let index=i-1
@@ -244,7 +250,7 @@ if [ $FLAG_RAW = "TRUE" ]; then
 			Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_matrix_to_object.R -i ${CHR}.matrix
 		done
 	else
-		cd ${DIR_DATA}/${NAME}/${RESOLUTION_string}/Raw
+		cd ${DIR_OUT}/Raw
 		Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_matrix_to_object.R -i ALL.matrix
 	fi
 fi
@@ -254,10 +260,10 @@ fi
 # binごとのinter-chromosomeのデータを計算
 #==============================================================
 if [ $FLAG_INTRA = "TRUE" ] && [ $FLAG_NORM = "TRUE" ]; then
-	if [ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/InterBin ]; then
-		mkdir ${DIR_DATA}/${NAME}/${RESOLUTION_string}/InterBin
+	if [ ! -e ${DIR_OUT}/InterBin ]; then
+		mkdir -p ${DIR_OUT}/InterBin
 	fi
-	[ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/InterBin/${CHRs[0]}.txt ] && cd ${DIR_DATA} && perl ${DIR_LIB}/utils/Make_association_from_fragmentdb_interChromosome_perBin.pl -i ${NAME}_fragment.db -o ${NAME}/${RESOLUTION_string}/InterBin/  -r ${RESOLUTION} -b ${NAME}_bad_fragment.txt
+	[ ! -e ${DIR_OUT}/InterBin/${CHRs[0]}.txt ] && cd ${DIR_DATA} && perl ${DIR_LIB}/utils/Make_association_from_fragmentdb_interChromosome_perBin.pl -i ${NAME}_fragment.db -o ${DIR_OUT}/InterBin/ -r ${RESOLUTION} -b ${NAME}_bad_fragment.txt
 fi
 
 
@@ -265,24 +271,24 @@ fi
 # ICE normalization
 #==============================================================
 if [ $FLAG_NORM = "TRUE" ]; then
-	if [ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/ICE ]; then
-		mkdir ${DIR_DATA}/${NAME}/${RESOLUTION_string}/ICE
+	# if [ ! -e ${DIR_OUT}/ICE ]; then
+	# 	mkdir ${DIR_OUT}/ICE
+	# fi
+	if [ ! -e ${DIR_OUT}/ICE2 ]; then
+		mkdir -p ${DIR_OUT}/ICE2
 	fi
-	if [ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/ICE2 ]; then
-		mkdir ${DIR_DATA}/${NAME}/${RESOLUTION_string}/ICE2
-	fi
-	cd ${DIR_DATA}/${NAME}/${RESOLUTION_string}
+	cd ${DIR_OUT}
 	if [ $FLAG_INTRA = "TRUE" ]; then
 		for i in $(seq 1 ${#CHRs[@]})
 		do
 			let index=i-1
 			CHR=${CHRs[index]}
-			[ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/ICE/${CHR}.rds ] && Rscript --vanilla --slave ${DIR_LIB}/utils/Bias_normalization.R -i Raw/${CHR}.matrix -o ICE/${CHR}.matrix --inter InterBin/${CHR}.txt --times 30 && Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_matrix_to_object.R -i ICE/${CHR}.matrix
-			[ ! -e ${DIR_DATA}/${NAME}/${RESOLUTION_string}/ICE2/${CHR}.rds ] && Rscript --vanilla --slave ${DIR_LIB}/utils/Bias_normalization_ICE2.R -i Raw/${CHR}.matrix -o ICE2/${CHR}.matrix --inter InterBin/${CHR}.txt --times 30 && Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_matrix_to_object.R -i ICE2/${CHR}.matrix
+			# [ ! -e ${DIR_OUT}/ICE/${CHR}.rds ] && Rscript --vanilla --slave ${DIR_LIB}/utils/Bias_normalization.R -i ${DIR_OUT}/Raw/${CHR}.matrix -o ${DIR_OUT}/ICE/${CHR}.matrix --inter ${DIR_OUT}/InterBin/${CHR}.txt --times 30 && Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_matrix_to_object.R -i ${DIR_OUT}/ICE/${CHR}.matrix
+			[ ! -e ${DIR_OUT}/ICE2/${CHR}.rds ] && Rscript --vanilla --slave ${DIR_LIB}/utils/Bias_normalization_ICE2.R -i ${DIR_OUT}/Raw/${CHR}.matrix -o ${DIR_OUT}/ICE2/${CHR}.matrix --inter ${DIR_OUT}/InterBin/${CHR}.txt --times 30 && Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_matrix_to_object.R -i ${DIR_OUT}/ICE2/${CHR}.matrix
 		done
 	else
-		Rscript --vanilla --slave ${DIR_LIB}/utils/Bias_normalization.R -i Raw/ALL.matrix -o ICE/ALL.matrix --times 30 && Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_matrix_to_object.R -i ICE/ALL.matrix
-		Rscript --vanilla --slave ${DIR_LIB}/utils/Bias_normalization_ICE2.R -i Raw/ALL.matrix -o ICE2/ALL.matrix --times 30 && Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_matrix_to_object.R -i ICE2/ALL.matrix
+		# Rscript --vanilla --slave ${DIR_LIB}/utils/Bias_normalization.R -i ${DIR_OUT}/Raw/ALL.matrix -o ${DIR_OUT}/ICE/ALL.matrix --times 30 && Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_matrix_to_object.R -i ${DIR_OUT}/ICE/ALL.matrix
+		Rscript --vanilla --slave ${DIR_LIB}/utils/Bias_normalization_ICE2.R -i ${DIR_OUT}/Raw/ALL.matrix -o ${DIR_OUT}/ICE2/ALL.matrix --times 30 && Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_matrix_to_object.R -i ${DIR_OUT}/ICE2/ALL.matrix
 	fi
 fi
 
