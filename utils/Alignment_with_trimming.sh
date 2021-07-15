@@ -1,7 +1,8 @@
 #!/bin/bash
 
 if hash module 2>/dev/null; then
-	module load bowtie2
+	module load miniconda
+	conda activate bowtie2-2.4.4
 	module load samtools
 fi
 
