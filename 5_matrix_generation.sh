@@ -31,14 +31,20 @@ Description
 	--exclude [exclude chromsome list]
 		list of excluding chromosomes. Separated by ,. Ex. chrM,chrY
 
-	-r, --resolution [ex. 500kb]
-		map resolution. 1 for single fragment resolution
+	-r, --resolution [ex. 500kb. 2f for fragment resolution]
+		map resolution.
+
+	-f, --fragment [TRUE/FALSE]
+		fragment resolution analysis mode. resolution value were recognized as fragment number. (default : false)
 
 	--intra [TRUE/FALSE]
 		onlyt intra chromosome (TRUE) or all (FALSE). Default : TRUE
 	
 	-e, --normalization [TRUE/FALSE]
 		Do normalization. Default : TRUE
+
+	--normalization_old [TRUE/FALSE]
+		Do old ICE normalization. Default : FALSE
 	
 	-c, --raw [TRUE/FALSE]
 		Generate raw matrices. If already exists, overwrite. Default : TRUE
@@ -60,8 +66,8 @@ get_version(){
 	echo "${0} version 1.0"
 }
 
-SHORT=hvd:o:n:x:r:e:c:t:
-LONG=help,version,directory:,out:,name:,ref:,include:,exclude:,resolution:,intra:,normalization:,raw:,use_blacklist:,threshold:,max_distance:
+SHORT=hvd:o:n:x:r:f:e:c:t:
+LONG=help,version,directory:,out:,name:,ref:,include:,exclude:,resolution:,fragment:,intra:,normalization:,normalization_old:,raw:,use_blacklist:,threshold:,max_distance:
 PARSED=`getopt --options $SHORT --longoptions $LONG --name "$0" -- "$@"`
 if [[ $? -ne 0 ]]; then
 	exit 2
@@ -107,6 +113,11 @@ while true; do
 			RESOLUTION=${RESOLUTION_string/Mb/000000}
 			RESOLUTION=${RESOLUTION/kb/000}
 			RESOLUTION=${RESOLUTION/bp/}
+			RESOLUTION=${RESOLUTION/f/}
+			shift 2
+			;;
+		-f|--fragment)
+			FLAG_fragment="$2"
 			shift 2
 			;;
 		--intra)
@@ -116,6 +127,10 @@ while true; do
 			;;
 		-e|--normalization)
 			FLAG_NORM="$2"
+			shift 2
+			;;
+		--normalization_old)
+			FLAG_NORM_OLD="$2"
 			shift 2
 			;;
 		-c|--raw)
@@ -153,6 +168,7 @@ done
 [ ! -n "${REF}" ] && echo "Please specify ref" && exit 1
 FLAG_INTRA=${FLAG_INTRA:-TRUE}
 FLAG_NORM=${FLAG_NORM:-TRUE}
+FLAG_NORM_OLD=${FLAG_NORM_OLD:-FALSE}
 FLAG_RAW=${FLAG_RAW:-TRUE}
 FLAG_blacklist=${FLAG_blacklist:-TRUE}
 CHR_include=${CHR_include:-NA}
@@ -162,6 +178,7 @@ FLAG_dataframe=${FLAG_dataframe:-FALSE}
 [ "$FLAG_dataframe" = "TRUE" ] && [ ! -n "$THRESHOLD_MAX_DISTANCE" ] && echo "If output as dataframe format, please specify maximum distance" && exit 1
 THRESHOLD_SELF=${THRESHOLD_SELF:-10000}
 DIR_OUT=${DIR_OUT:-"${DIR_DATA}/${NAME}/${RESOLUTION_string}"}
+FLAG_fragment=${FLAG_fragment:-"FALSE"}
 
 [ ! -e ${DIR_OUT} ] && mkdir -p ${DIR_OUT}
 
@@ -201,16 +218,22 @@ if [ $FLAG_dataframe = "TRUE" ]; then
 	if [ ! -e ${DIR_OUT}/ICE2 ]; then
 		mkdir -p ${DIR_OUT}/ICE2
 	fi
+
+	if [ "$FLAG_fragment" = "TRUE" ]; then
+		PROGRAM_ASSO=${DIR_LIB}/utils/Make_association_from_fragmentdb_onlyIntraChr_lessThanDistance_fragResolution.pl
+	else
+		PROGRAM_ASSO=${DIR_LIB}/utils/Make_association_from_fragmentdb_onlyIntraChr_lessThanDistance.pl
+	fi
+
 	cd ${DIR_DATA};
-	
 	for i in $(seq 1 ${#CHRs[@]})
 	do
 		let index=i-1
 		CHR=${CHRs[index]}
 		if [ "$FLAG_blacklist" = "TRUE" ] && [ -e ${DIR_DATA}/${NAME}_bad_fragment.txt ]; then
-			perl ${DIR_LIB}/utils/Make_association_from_fragmentdb_onlyIntraChr_lessThanDistance.pl -i ${NAME}_fragment.db -o ${DIR_OUT}/Raw/${CHR}_$THRESHOLD_MAX_DISTANCE.txt -c ${CHR} -r ${RESOLUTION} -b ${DIR_DATA}/${NAME}_bad_fragment.txt -m $THRESHOLD_MAX_DISTANCE -t $THRESHOLD_SELF
+			perl ${PROGRAM_ASSO} -i ${NAME}_fragment.db -o ${DIR_OUT}/Raw/${CHR}_$THRESHOLD_MAX_DISTANCE.txt -c ${CHR} -r ${RESOLUTION} -b ${DIR_DATA}/${NAME}_bad_fragment.txt -m $THRESHOLD_MAX_DISTANCE -t $THRESHOLD_SELF
 		else
-			perl ${DIR_LIB}/utils/Make_association_from_fragmentdb_onlyIntraChr_lessThanDistance.pl -i ${NAME}_fragment.db -o ${DIR_OUT}/Raw/${CHR}_$THRESHOLD_MAX_DISTANCE.txt -c ${CHR} -r ${RESOLUTION} -m $THRESHOLD_MAX_DISTANCE -t $THRESHOLD_SELF
+			perl ${PROGRAM_ASSO} -i ${NAME}_fragment.db -o ${DIR_OUT}/Raw/${CHR}_$THRESHOLD_MAX_DISTANCE.txt -c ${CHR} -r ${RESOLUTION} -m $THRESHOLD_MAX_DISTANCE -t $THRESHOLD_SELF
 		fi
 
 		Rscript --vanilla --slave ${DIR_LIB}/utils/Bias_normalization_ICE2_distanceRestrict.R -i ${DIR_OUT}/Raw/${CHR}_$THRESHOLD_MAX_DISTANCE.txt -o ${DIR_OUT}/ICE2/${CHR}_$THRESHOLD_MAX_DISTANCE.txt --times 30
@@ -271,9 +294,6 @@ fi
 # ICE normalization
 #==============================================================
 if [ $FLAG_NORM = "TRUE" ]; then
-	# if [ ! -e ${DIR_OUT}/ICE ]; then
-	# 	mkdir ${DIR_OUT}/ICE
-	# fi
 	if [ ! -e ${DIR_OUT}/ICE2 ]; then
 		mkdir -p ${DIR_OUT}/ICE2
 	fi
@@ -283,12 +303,27 @@ if [ $FLAG_NORM = "TRUE" ]; then
 		do
 			let index=i-1
 			CHR=${CHRs[index]}
-			# [ ! -e ${DIR_OUT}/ICE/${CHR}.rds ] && Rscript --vanilla --slave ${DIR_LIB}/utils/Bias_normalization.R -i ${DIR_OUT}/Raw/${CHR}.matrix -o ${DIR_OUT}/ICE/${CHR}.matrix --inter ${DIR_OUT}/InterBin/${CHR}.txt --times 30 && Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_matrix_to_object.R -i ${DIR_OUT}/ICE/${CHR}.matrix
 			[ ! -e ${DIR_OUT}/ICE2/${CHR}.rds ] && Rscript --vanilla --slave ${DIR_LIB}/utils/Bias_normalization_ICE2.R -i ${DIR_OUT}/Raw/${CHR}.matrix -o ${DIR_OUT}/ICE2/${CHR}.matrix --inter ${DIR_OUT}/InterBin/${CHR}.txt --times 30 && Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_matrix_to_object.R -i ${DIR_OUT}/ICE2/${CHR}.matrix
 		done
 	else
-		# Rscript --vanilla --slave ${DIR_LIB}/utils/Bias_normalization.R -i ${DIR_OUT}/Raw/ALL.matrix -o ${DIR_OUT}/ICE/ALL.matrix --times 30 && Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_matrix_to_object.R -i ${DIR_OUT}/ICE/ALL.matrix
 		Rscript --vanilla --slave ${DIR_LIB}/utils/Bias_normalization_ICE2.R -i ${DIR_OUT}/Raw/ALL.matrix -o ${DIR_OUT}/ICE2/ALL.matrix --times 30 && Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_matrix_to_object.R -i ${DIR_OUT}/ICE2/ALL.matrix
 	fi
 fi
 
+
+if [ $FLAG_NORM_OLD = "TRUE" ]; then
+	if [ ! -e ${DIR_OUT}/ICE ]; then
+		mkdir ${DIR_OUT}/ICE
+	fi
+	cd ${DIR_OUT}
+	if [ $FLAG_INTRA = "TRUE" ]; then
+		for i in $(seq 1 ${#CHRs[@]})
+		do
+			let index=i-1
+			CHR=${CHRs[index]}
+			[ ! -e ${DIR_OUT}/ICE/${CHR}.rds ] && Rscript --vanilla --slave ${DIR_LIB}/utils/Bias_normalization.R -i ${DIR_OUT}/Raw/${CHR}.matrix -o ${DIR_OUT}/ICE/${CHR}.matrix --inter ${DIR_OUT}/InterBin/${CHR}.txt --times 30 && Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_matrix_to_object.R -i ${DIR_OUT}/ICE/${CHR}.matrix
+		done
+	else
+		Rscript --vanilla --slave ${DIR_LIB}/utils/Bias_normalization.R -i ${DIR_OUT}/Raw/ALL.matrix -o ${DIR_OUT}/ICE/ALL.matrix --times 30 && Rscript --slave --vanilla ${DIR_LIB}/utils/Convert_matrix_to_object.R -i ${DIR_OUT}/ICE/ALL.matrix
+	fi
+fi
