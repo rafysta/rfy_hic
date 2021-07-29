@@ -23,6 +23,10 @@ Description
 	-n, --name [merged sample name]
 		sample name after merged
 
+	-t, --threshold [threshold. default: 10000]
+		threshold to remove different direction reads to remove potential self ligation. (default 10kb)
+		We use 2kb for 3 restriction enzyme Hi-C
+
 EOF
 
 }
@@ -65,9 +69,10 @@ while true; do
 			REF="$2"
 			shift 2
 			;;
-		-t, --threshold [threshold. default: 10000]
-			threshold to remove different direction reads to remove potential self ligation. (default 10kb)
-			We use 2kb for 3 restriction enzyme Hi-C
+		-t|--threshold)
+			THRESHOLD_SELF="$2"
+			shift 2
+			;;
 		--)
 			shift
 			break
