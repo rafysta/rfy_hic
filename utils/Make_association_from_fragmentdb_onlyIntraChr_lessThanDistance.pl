@@ -132,7 +132,11 @@ $dbh->disconnect();
 my $fh_out = IO::File->new($FILE_out, 'w') or die "cannot write $FILE_out: $!";
 $fh_out->print("loc1\tloc2\tscore\n");
 foreach my $key(keys %data){
-	$fh_out->printf("%s\t%.2f\n", $key, $data{$key});
+	my ($id1, $id2) = split /\t/, $key;
+	my ($chr1, $start1, $end1) = split /:/, $id1;
+	if($chr1 eq $CHROMOSOME){
+		$fh_out->printf("%s\t%.2f\n", $key, $data{$key});
+	}
 }
 $fh_out->close();
 
