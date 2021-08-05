@@ -143,12 +143,12 @@ $fh_out->print("\n");
 for(my $i = 0; $i < @bins; $i++){
 	my @values;
 	for(my $j = 0; $j < @bins; $j++){
-		if(exists $data{$bins[$i]}{$bins[$j]}){
-			push @values, $data{$bins[$i]}{$bins[$j]};
-		}elsif(exists $data{$bins[$j]}{$bins[$i]}){
-			push @values, $data{$bins[$j]}{$bins[$i]};
+		if($i < $j){
+			my $value = exists $data{$bins[$i]}{$bins[$j]} ? $data{$bins[$i]}{$bins[$j]} : 0;
+			push @values, $value;
 		}else{
-			push @values, 0;
+			my $value = exists $data{$bins[$j]}{$bins[$i]} ? $data{$bins[$j]}{$bins[$i]} : 0;
+			push @values, $value;
 		}
 	}
 	my ($c, $m) = split /:/, $bins[$i];
