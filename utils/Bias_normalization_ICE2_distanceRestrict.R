@@ -47,7 +47,7 @@ rm(D_line)
 
 D_long <- D_table %>% filter(loc2=='long_distance', ok1==1, !is.na(score)) %>% select(loc=loc1, long=score)
 D_table <- D_table %>% filter(loc2!='long_distance', ok1==1, ok2==1, !is.na(score)) %>% select(loc1, loc2, score)
-D_table <- rbind(D_table, D_table %>% dplyr::rename(loc1=loc2, loc2=loc1))
+D_table <- rbind(D_table %>% filter(loc1!=loc2), D_table %>% dplyr::rename(loc1=loc2, loc2=loc1))
 
 
 Single <- function(m, b){
@@ -109,6 +109,7 @@ D_table <- D_table %>% tidyr::separate(L1, c("chr1", "start1", "end1"), ":", con
 D_table <- D_table %>% tidyr::separate(L2, c("chr2", "start2", "end2"), ":", convert=TRUE, extra="merge")
 D_table <- D_table %>% filter(start1 <= start2)
 D_table <- D_table %>% select(loc1, loc2, score)
+D_table$score <- as.numeric(format(D_table$score, digits = 5))
 
 write.table(D_table, FILE_out, sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
 
