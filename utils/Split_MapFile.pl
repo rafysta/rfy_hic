@@ -85,6 +85,7 @@ sub Chr2Num{
 	if($chr =~ m/chr(\w+)/){
 		$num = $1;
 	}
+	$num =~ s/[^0-9.]+//g;
 	if($num eq 'X'){
 		$num = 23;
 	}
