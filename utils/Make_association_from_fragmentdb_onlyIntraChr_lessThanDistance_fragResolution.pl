@@ -85,7 +85,7 @@ while(my $ref = $sth_data->fetchrow_arrayref()){
 
 	# THRESHOLD_SELF以内の距離だった場合には、scoreを２倍にする
 	# (THRESHOLD_SELF以内については、同じ向きのデータしか無いから)
-	if($distance < $THRESHOLD_SELF){
+	if($chr1 eq $chr2 and $distance < $THRESHOLD_SELF){
 		$score = $score * 2;
 	}
 
@@ -151,7 +151,7 @@ foreach my $key(keys %data){
 	my $loc1 = $chr1 . ":" . $start1 . ":" . $end1;
 
 	my $loc2;
-	if($id2 == 'long_distance'){
+	if($id2 eq 'long_distance'){
 		$loc2 = 'long_distance';
 	}else{
 		my ($chr2, $bin2) = split /:/, $id2;
@@ -159,10 +159,12 @@ foreach my $key(keys %data){
 		my $end2 = $id_info{$id2}{'end'};
 		$loc2 = $chr2 . ":" . $start2 . ":" . $end2;
 	}
+
 	if($chr1 eq $CHROMOSOME){
 		$fh_out->printf("%s\t%s\t%.2f\n", $loc1, $loc2, $data{$key});
 	}
 }
+
 $fh_out->close();
 
 
