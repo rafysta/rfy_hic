@@ -85,27 +85,56 @@ sub Chr2Num{
 	if($chr =~ m/chr(\w+)/){
 		$num = $1;
 	}
-	$num =~ s/[^0-9.]+//g;
-	if($num eq 'X'){
+	if($chr =~ m/Supercontig_12\.(\d+)/){
+		$num = $1;
+	}
+	if($chr eq 'X'){
 		$num = 23;
 	}
-	if($num eq 'Y'){
+	if($chr eq 'Y'){
 		$num = 24;
 	}
-	if($num eq 'M'){
+	if($chr eq 'M'){
 		$num = 25;
 	}
-	if($num eq 'EBV'){
+	if($chr eq 'EBV'){
 		$num = 26;
 	}
-	if($num eq 'I'){
+	if($chr eq 'I'){
 		$num = 1;
 	}
-	if($num eq 'II'){
+	if($chr eq 'II'){
 		$num = 2;
 	}
-	if($num eq 'III'){
+	if($chr eq 'III'){
 		$num = 3;
+	}
+	if($chr eq 'III'){
+		$num = 3;
+	}
+	if($chr eq 'IV'){
+		$num = 4;
+	}
+	if($chr eq 'V'){
+		$num = 5;
+	}
+	if($chr eq 'VI'){
+		$num = 6;
+	}
+	if($chr eq 'VII'){
+		$num = 7;
+	}
+	if($chr eq 'VIII'){
+		$num = 8;
+	}
+	if($chr eq 'IX'){
+		$num = 9;
+	}
+	if($chr eq 'X'){
+		$num = 10;
+	}
+	if($chr eq 'MT'){
+		$num = 25;
 	}
 	return $num;
 }
