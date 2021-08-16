@@ -95,6 +95,17 @@ case $REF in
 					exit ;;
 			esac
 			;;
+	ASM329048v1)	BOWTIE2_INDEX=${HOME}/Genome/data/malassezia/ASM329048v1/Bowtie2/ASM329048v1
+			CHROM_LENGTH=7369627
+			FILE_CHROME_LENGTH=${HOME}/Genome/data/malassezia/ASM329048v1/LENGTH.txt
+			case $RESTRICTION in 
+				MboI)	FILE_enzyme_index=${HOME}/Genome/data/malassezia/ASM329048v1/Sectioning_MboI.txt
+						FILE_enzyme_def=${HOME}/Genome/data/malassezia/ASM329048v1/MboI_sites.txt ;;
+				NA) ;;
+				*)	echo "$RESTRICTION is not registered for $ORGANISM"
+					exit ;;
+			esac
+			;;
 	hg19)	BOWTIE2_INDEX=${HOME}/Genome/data/human/hg19/Bowtie2/hg19
 			CHROM_LENGTH=3095677412
 			FILE_CHROME_LENGTH=${HOME}/Genome/data/human/hg19/LENGTH.txt
