@@ -88,13 +88,13 @@ sub Chr2Num{
 	if($chr =~ m/Supercontig_12\.(\d+)/){
 		$num = $1;
 	}
-	if($chr eq 'X'){
+	if($num eq 'X'){
 		$num = 23;
 	}
-	if($chr eq 'Y'){
+	if($num eq 'Y'){
 		$num = 24;
 	}
-	if($chr eq 'M'){
+	if($num eq 'M'){
 		$num = 25;
 	}
 	if($chr eq 'EBV'){
