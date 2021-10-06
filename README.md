@@ -9,7 +9,7 @@ fastqファイルから、matricesを作るためのHi-C自動解析パイプラ
 ## 以下のコマンドでHi-Cのread filteringの結果をまとめることができます。
 - 4_read_filtering_summary.sh
 
-## Technical replicateのデータをまとめるには、以下のプログラムを使うことができます。(PCR duplicationを除きます
+## Technical replicateのデータをまとめるには、以下のプログラムを使うことができます。(PCR duplicationを除きます)
 - merge_map_technical_replicate.sh
 
 
@@ -27,11 +27,13 @@ sh 2_make_map_file.sh --help
 ```
 sh 2_make_map_file.sh --name ${NAME} --ref mm10 --restriction $ENZYME -d ${DIR_DATA} --f1 ${DIR_RAW}/${FILE_fastq1} --f2 ${DIR_RAW}/${FILE_fastq2}
 ```
+self ligationの閾値を10kb以外にしたい場合には、`--threshold`オプションを指定してください。
 
 ### 3_make_fragment_db.sh
 ```
 sh 3_make_fragment_db.sh --directory ${DIR_DATA} --in ${FILE_IN} --name ${NAME} --ref mm10 --restriction $ENZYME
 ```
+self ligationの閾値を10kb以外にしたい場合には、`--threshold`オプションを指定してください。
 
 ### 4_read_filtering_summary.sh
 ```
@@ -40,9 +42,9 @@ sh 4_read_filtering_summary.sh -d ${DIR_DATA} -o Read_summary_sample.txt $(sqlit
 
 ### 5_matrix_generation.sh
 ```
-sh 5_matrix_generation.sh --directory ${DIR_DATA} --name ${NAME} --ref mm10 --resolution ${RESOLUTION} --intra TRUE --threshold 10000
+sh 5_matrix_generation.sh --directory ${DIR_DATA} --name ${NAME} --ref mm10 --resolution ${RESOLUTION} --intra TRUE
 ```
-
+2と3でself ligationの閾値を10kb以外にした場合には、`--threshold`オプションを指定してください。
 
 
 
