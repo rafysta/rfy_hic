@@ -83,7 +83,7 @@ while(my $ref = $sth_data->fetchrow_arrayref()){
 
 	# THRESHOLD_SELF以内の距離だった場合には、scoreを２倍にする
 	# (THRESHOLD_SELF以内については、同じ向きのデータしか無いから)
-	if($distance < $THRESHOLD_SELF){
+	if($chr1 eq $chr2 and $distance < $THRESHOLD_SELF){
 		$score = $score * 2;
 	}
 
