@@ -93,7 +93,7 @@ while(my $ref = $sth_data->fetchrow_arrayref()){
 	my $distance = abs($middle1 - $middle2);
 
 	# self ligationの距離以内(defaultでは10kb)の距離だった場合には、scoreを２倍にする(同じ向きのデータしか無いから)
-	if($distance < $THRESHOLD_SELF){
+	if($chr1 eq $chr2 and $distance < $THRESHOLD_SELF){
 		$score = $score * 2;
 	}
 
