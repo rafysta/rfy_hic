@@ -14,6 +14,9 @@ Description
 	-v, --version
 		show version
 
+	-x, --ref [ex. hg19]
+		organism name
+		
 	-i, --in [map files]
 		map files. Separated with ,. Map files could be gziped
 
