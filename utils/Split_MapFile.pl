@@ -97,6 +97,9 @@ sub Chr2Num{
 	if($num eq 'M'){
 		$num = 25;
 	}
+	if($chr eq 'MT'){
+		$num = 25;
+	}
 	if($chr eq 'EBV'){
 		$num = 26;
 	}
@@ -105,9 +108,6 @@ sub Chr2Num{
 	}
 	if($chr eq 'II'){
 		$num = 2;
-	}
-	if($chr eq 'III'){
-		$num = 3;
 	}
 	if($chr eq 'III'){
 		$num = 3;
@@ -132,9 +132,6 @@ sub Chr2Num{
 	}
 	if($chr eq 'X'){
 		$num = 10;
-	}
-	if($chr eq 'MT'){
-		$num = 25;
 	}
 	return $num;
 }
