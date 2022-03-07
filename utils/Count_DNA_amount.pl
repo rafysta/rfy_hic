@@ -47,15 +47,19 @@ foreach my $chr(@Chromosomes){
 
 	# 1kbごとにオーバーラップしている数を数える
 	#　異なる向きの組み合わせ- 同じ向きの組み合わせ(正しいHiC products)
-	my %Data;
+	my %Same;
+	my %Different;
+	my %Diff;
 	while(my $ref = $sth_data->fetchrow_arrayref()){
 		my ($position1, $position2, $direction1, $direction2) = @$ref;
 		for(my $i = $position1; $i < $position2; $i += 1000){
 			my $bin = int($i / 1000) * 1000;
 			if($direction1 eq $direction2){
-				$Data{$bin}--;
+				$Same{$bin}++;
+				$Diff{$bin}--;
 			}else{
-				$Data{$bin}++;
+				$Different{$bin}++;
+				$Diff{$bin}++;
 			}
 		}
 	}
@@ -64,8 +68,8 @@ foreach my $chr(@Chromosomes){
 	$sth_data->finish();
 
 	# 出力
-	foreach my $p(sort {$a <=> $b} keys %Data){
-		$fh_out->printf("%s\t%d\t%d\t.\t%d\t+\n", $chr, $p, $p+999, $Data{$p});
+	foreach my $p(sort {$a <=> $b} keys %Diff){
+		$fh_out->printf("%s\t%d\t%d\t.\t%d\t+\t%d\t%d\n", $chr, $p, $p+999, $Diff{$p}, $Same{$p}, $Different{$p});
 	}
 }
 $fh_out->close();
