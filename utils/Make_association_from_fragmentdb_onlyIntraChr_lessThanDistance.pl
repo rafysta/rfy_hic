@@ -63,6 +63,10 @@ $sth_data->execute();
 while(my $ref = $sth_data->fetchrow_arrayref()){
 	my ($chr1, $start1, $end1, $frag1, $chr2, $start2, $end2, $frag2, $score) = @$ref;
 
+	if($chr1 eq $chr2 and $start1 > $start2){
+		($start1, $end1, $frag1, $start2, $end2, $frag2) = ($start2, $end2, $frag2, $start1, $end1, $frag1);
+	}
+
 	# fragmentがblack listに含まれていたら計算しない
 	if(exists $Black{"$chr1\t$frag1"}){
 		next;
