@@ -48,7 +48,7 @@ rm(D_line)
 D_long <- D_table %>% filter(loc2=='long_distance', ok1==1, !is.na(score)) %>% select(loc=loc1, long=score)
 D_table <- D_table %>% filter(loc2!='long_distance', ok1==1, ok2==1, !is.na(score)) %>% select(loc1, loc2, score)
 D_table <- rbind(D_table %>% filter(loc1!=loc2), D_table %>% dplyr::rename(loc1=loc2, loc2=loc1))
-
+D_table <- D_table %>% group_by(loc1, loc2) %>% summarise(score=sum(score)) %>% ungroup()
 
 Single <- function(m, b){
   Db <- m %>% group_by(loc1) %>% summarize(Lscore=sum(score, na.rm = T)) %>% ungroup()
