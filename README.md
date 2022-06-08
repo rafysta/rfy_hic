@@ -1,39 +1,39 @@
 # rfy_hic
-fastqファイルから、matricesを作るためのHi-C自動解析パイプラインです。
+This is a pipeline for automating Hi-C analysis from fastq files to make matrices.
 
-## 以下の順番で、プログラムを実行してください。
-1. 2_make_map_file.sh - fastqファイルをbowtie2でalignmentして各種filteringを行います。map.txt.gzファイルができるので、このファイルを使ってJuicerファイルの作成もできます。
-2. 3_make_fragment_db.sh - 制限酵素断片ごとに相互作用をカウントします。バイアスのチェック、高速データアクセスのためのデータベースの作成などを行います。
-3. 5_matrix_generation.sh - Raw, ICE, inter-chromosomeの３種類のマトリックスを作ります。inter-chromosomeは、ICE normalizationで用います。
+## Run the program in the following order:
+1. 2_make_map_file.sh - alignment of fastq files with bowtie2 for various filtering. map.txt.gz file is created, which can also be used to create Juicer files, too.
+2. 3_make_fragment_db.sh - Count interactions for each restriction enzyme fragment. Checks for bias and creates a database for fast data access.
+3. 5_matrix_generation.sh - creates three matrices: Raw, ICE, and inter-chromosome. Inter-chromosome matrices are used for ICE normalization.
 
-## 以下のコマンドでHi-Cのread filteringの結果をまとめることができます。
+## The following command summarizes the results of Hi-C's read filtering.
 - 4_read_filtering_summary.sh
 
-## Technical replicateのデータをまとめるには、以下のプログラムを使うことができます。(PCR duplicationを除きます)
+## The following program can be used to summarize data from technical replicate. (except for PCR duplication)
 - merge_map_technical_replicate.sh
 
 
-## 各スクリプトの使い方例
-すべてのスクリプトのパラメータは、`-h` もしくは、`--help`をつけて実行することで、詳細を確認することができます。
-例えば
+## Examples of how to use each script
+All script parameters can be run with `-h` or `--help` to see the details.
+For example
 ```
 sh 2_make_map_file.sh --help
 ```
-とターミナル上で実行してください。すべてのパラメータリストと、指定の仕方についての詳しい説明が表示されます。
+on the terminal. You will see a list of all parameters and a detailed explanation of how to specify them.
 
 
-具体的な実行例を以下に示します。
+Specific examples are shown below.
 ### 2_make_map_file.sh
 ```
 sh 2_make_map_file.sh --name ${NAME} --ref mm10 --restriction $ENZYME -d ${DIR_DATA} --f1 ${DIR_RAW}/${FILE_fastq1} --f2 ${DIR_RAW}/${FILE_fastq2}
 ```
-self ligationの閾値を10kb以外にしたい場合には、`--threshold`オプションを指定してください。
+If you want the threshold for self ligation to be something other than 10 kb, specify the `--threshold` option.
 
 ### 3_make_fragment_db.sh
 ```
 sh 3_make_fragment_db.sh --directory ${DIR_DATA} --in ${FILE_IN} --name ${NAME} --ref mm10 --restriction $ENZYME
 ```
-self ligationの閾値を10kb以外にしたい場合には、`--threshold`オプションを指定してください。
+If you want the threshold for self ligation to be something other than 10 kb, specify the `--threshold` option.
 
 ### 4_read_filtering_summary.sh
 ```
@@ -44,7 +44,7 @@ sh 4_read_filtering_summary.sh -d ${DIR_DATA} -o Read_summary_sample.txt $(sqlit
 ```
 sh 5_matrix_generation.sh --directory ${DIR_DATA} --name ${NAME} --ref mm10 --resolution ${RESOLUTION} --intra TRUE
 ```
-2と3でself ligationの閾値を10kb以外にした場合には、`--threshold`オプションを指定してください。
+If you set the threshold for self ligation at 2 and 3 to something other than 10 kb, specify the `--threshold` option.
 
 
 
