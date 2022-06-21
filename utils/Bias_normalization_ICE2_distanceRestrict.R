@@ -33,13 +33,8 @@ if(as.character(opt["log"]) == "NA"){
 D_table <- fread(FILE_in, header = T)
 
 D_line <- rbind(D_table %>% select(loc=loc1, score), D_table %>% filter(loc2!='long_distance') %>% select(loc=loc2, score))
-D_line <- D_line %>% group_by(loc) %>% summarize(score=sum(score, na.rm=TRUE)) %>% ungroup()
-
-
-if(Threshold < 10){
-  Threshold <- as.numeric(quantile(D_line %>% filter(score > 0) %>% pull(score),prob=Threshold))
-}
-D_line <- D_line %>% mutate(ok=ifelse(score > Threshold, 1, 0))
+D_line <- D_line %>% group_by(loc) %>% summarize(zero_rate = sum(score==0 || is.na(score)) / length(score)) %>% ungroup()
+D_line <- D_line %>% mutate(ok=ifelse((1 - zero_rate) > Threshold, 1, 0))
 
 D_table <- dplyr::left_join(D_table, D_line %>% select(loc1=loc, ok1=ok), by="loc1")
 D_table <- dplyr::left_join(D_table, D_line %>% select(loc2=loc, ok2=ok), by="loc2")

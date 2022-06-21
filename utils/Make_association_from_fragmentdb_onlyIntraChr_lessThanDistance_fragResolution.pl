@@ -65,6 +65,10 @@ $sth_data->execute();
 while(my $ref = $sth_data->fetchrow_arrayref()){
 	my ($chr1, $start1, $end1, $frag1, $chr2, $start2, $end2, $frag2, $score) = @$ref;
 
+	if($chr1 eq $chr2 and $start1 > $start2){
+		($start1, $end1, $frag1, $start2, $end2, $frag2) = ($start2, $end2, $frag2, $start1, $end1, $frag1);
+	}
+
 	# fragmentがblack listに含まれていたら計算しない
 	if(exists $Black{"$chr1\t$frag1"}){
 		next;
@@ -98,8 +102,12 @@ while(my $ref = $sth_data->fetchrow_arrayref()){
 	if($FLAG_longDistance == 0){
 		$data{"$id1\t$id2"} += $score;
 	}else{
-		$data{"$id1\tlong_distance"} += $score;
-		$data{"$id2\tlong_distance"} += $score;
+		if($chr1 eq $CHROMOSOME){
+			$data{"$id1\tlong_distance"} += $score;
+		}
+		if($chr2 eq $CHROMOSOME){
+			$data{"$id2\tlong_distance"} += $score;
+		}
 	}
 
 	# id information
@@ -160,9 +168,7 @@ foreach my $key(keys %data){
 		$loc2 = $chr2 . ":" . $start2 . ":" . $end2;
 	}
 
-	if($chr1 eq $CHROMOSOME){
-		$fh_out->printf("%s\t%s\t%.2f\n", $loc1, $loc2, $data{$key});
-	}
+	$fh_out->printf("%s\t%s\t%.2f\n", $loc1, $loc2, $data{$key});
 }
 
 $fh_out->close();

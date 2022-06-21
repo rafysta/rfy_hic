@@ -108,20 +108,25 @@ while(my $ref = $sth_data->fetchrow_arrayref()){
 		$id2b = $chr2 . ":" . $bin2b . ":" . ($bin2b + $Resolution - 1);
 	}
 
-	# 4つの組み合わせに均等に分配する
-	$score = $score / 4;
+
 
 	# count data（既に左側が小さいということは保証されている）
 	if($FLAG_longDistance == 0){
+		$score = $score / 4;
 		$data{"$id1a\t$id2a"} += $score;
 		$data{"$id1a\t$id2b"} += $score;
 		$data{"$id1b\t$id2a"} += $score;
 		$data{"$id1b\t$id2b"} += $score;
 	}else{
-		$data{"$id1a\tlong_distance"} += $score;
-		$data{"$id1b\tlong_distance"} += $score;
-		$data{"$id2a\tlong_distance"} += $score;
-		$data{"$id2b\tlong_distance"} += $score;
+		$score = $score / 2;
+		if($chr1 eq $CHROMOSOME){
+			$data{"$id1a\tlong_distance"} += $score;
+			$data{"$id1b\tlong_distance"} += $score;
+		}
+		if($chr2 eq $CHROMOSOME){
+			$data{"$id2a\tlong_distance"} += $score;
+			$data{"$id2b\tlong_distance"} += $score;
+		}
 	}
 
 }
@@ -136,11 +141,7 @@ $dbh->disconnect();
 my $fh_out = IO::File->new($FILE_out, 'w') or die "cannot write $FILE_out: $!";
 $fh_out->print("loc1\tloc2\tscore\n");
 foreach my $key(keys %data){
-	my ($id1, $id2) = split /\t/, $key;
-	my ($chr1, $start1, $end1) = split /:/, $id1;
-	if($chr1 eq $CHROMOSOME){
-		$fh_out->printf("%s\t%.2f\n", $key, $data{$key});
-	}
+	$fh_out->printf("%s\t%.2f\n", $key, $data{$key});
 }
 $fh_out->close();
 
