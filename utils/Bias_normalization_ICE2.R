@@ -42,10 +42,10 @@ SUM_bin <- apply(map, 1, sum)
 if(Threshold > 10){
   index_remove <- which(SUM_bin < Threshold)  # considered threshold as read number
 }else{
-  # index_remove <- which(SUM_bin < quantile(SUM_bin[SUM_bin > 0],prob=Threshold))   # # considered threshold as % 
+  index_remove <- which(SUM_bin < quantile(SUM_bin[SUM_bin > 0],prob=Threshold))   # # considered threshold as %
   
-  ### consider how much % of bins are zero
-  index_remove <- which(sum(SUM_bin > 0) < (length(SUM_bin) * Threshold))
+  ### consider how much % of bins are zero (Varianceがおかしいことがあったので辞める)
+  # index_remove <- which(sum(SUM_bin > 0) < (length(SUM_bin) * Threshold))
   
 }
 map[index_remove, ] <- NA
