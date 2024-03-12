@@ -79,7 +79,7 @@ INPUT_FILES=$@
 THRESHOLD=${THRESHOLD:-10000}
 
 
-DIR_tmp=$(mktemp -d /tmp/tmp_random_sampling.XXXXXX)
+DIR_tmp=$(mktemp -d ${DIR_OUT}/tmp_random_sampling.XXXXXX)
 [ ! -e ${DIR_tmp} ] && mkdir ${DIR_tmp}
 trap "rm -r ${DIR_tmp}" 0
 
