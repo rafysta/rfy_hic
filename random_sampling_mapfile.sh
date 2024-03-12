@@ -78,8 +78,8 @@ INPUT_FILES=$@
 [ ! -n "${FILE_out}" ] && echo "Please specify output file name" && exit 1
 THRESHOLD=${THRESHOLD:-10000}
 
-
-DIR_tmp=$(mktemp -d ${DIR_OUT}/tmp_random_sampling.XXXXXX)
+DIR_out=$(dirname "$FILE_out")
+DIR_tmp=$(mktemp -d ${DIR_out}/tmp_random_sampling.XXXXXX)
 [ ! -e ${DIR_tmp} ] && mkdir ${DIR_tmp}
 trap "rm -r ${DIR_tmp}" 0
 
