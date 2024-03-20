@@ -2,7 +2,8 @@
 
 if hash module 2>/dev/null; then
 	module load bowtie2/2.4.4
-	module load samtools
+	module load spack-rhel8
+	spack load 'samtools@1.16.1' arch=linux-rhel8-broadwell
 fi
 
 DIR_LIB=$(dirname $0)

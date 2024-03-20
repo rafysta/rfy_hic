@@ -122,7 +122,8 @@ THRESHOLD_SELF=${THRESHOLD_SELF:-10000}
 cd ${DIR_DATA}
 
 ### load module
-module load intel && module load R/4.0.2
+# module load intel && module load R/4.0.2
+module load perl/5.24.2
 
 #-----------------------------------------------
 # Remove all output file
