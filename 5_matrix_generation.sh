@@ -190,6 +190,7 @@ DIR_LIB=$(dirname $0)
 # module load intel 2> /dev/null
 # module load R/4.0.2
 module load perl/5.24.2
+export PERL5LIB=""
 
 #-----------------------------------------------
 # Load setting
