@@ -97,7 +97,11 @@ TIME_STAMP=$(date +"%Y-%m-%d")
 THRESHOLD_SELF=${THRESHOLD_SELF:-10000}
 
 ### load module
-module load intel && module load R/4.0.2
+# module purge
+# module load intel 2> /dev/null
+# module load R/4.0.2
+module load perl/5.24.2
+export PERL5LIB=""
 
 cd ${DIR_DATA}
 
